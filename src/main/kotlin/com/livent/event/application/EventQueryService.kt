@@ -1,5 +1,6 @@
 package com.livent.event.application
 
+import com.livent.common.adapter.inbound.web.exception.InvalidRequestException
 import com.livent.event.domain.exception.EventNotFoundException
 import com.livent.event.domain.model.ChatRoom
 import com.livent.event.domain.model.Event
@@ -35,7 +36,9 @@ class EventQueryService(
     }
 
     private fun resolveSliceRequest(cursor: String?, size: Int): EventSliceRequest {
-        require(size > 0) { "size must be greater than 0." }
+        if (size <= 0) {
+            throw InvalidRequestException("size must be greater than 0.")
+        }
 
         val pageSize = size.coerceAtMost(MAX_PAGE_SIZE)
         return EventSliceRequest(
@@ -81,7 +84,7 @@ class EventQueryService(
 
         return cursor.toLongOrNull()
             ?.takeIf { it >= 0 }
-            ?: throw IllegalArgumentException("cursor must be a non-negative number.")
+            ?: throw InvalidRequestException("cursor must be a non-negative number.")
     }
 }
 

@@ -1,5 +1,6 @@
 package com.livent.common.adapter.inbound.web
 
+import com.livent.common.adapter.inbound.web.exception.InvalidRequestException
 import com.project.common.core.domain.exception.CommonErrorCode
 import com.project.common.core.presentation.response.ApiResponse
 import com.project.common.core.presentation.response.errorOf
@@ -16,8 +17,8 @@ class LiventValidationExceptionHandler {
         .badRequest()
         .body(errorOf(CommonErrorCode.INVALID_REQUEST, ex.allErrors.firstOrNull()?.defaultMessage))
 
-    @ExceptionHandler(IllegalArgumentException::class)
-    fun handleIllegalArgument(ex: IllegalArgumentException): ResponseEntity<ApiResponse<Nothing>> = ResponseEntity
+    @ExceptionHandler(InvalidRequestException::class)
+    fun handleInvalidRequest(ex: InvalidRequestException): ResponseEntity<ApiResponse<Nothing>> = ResponseEntity
         .badRequest()
         .body(errorOf(CommonErrorCode.INVALID_REQUEST, ex.message))
 }
