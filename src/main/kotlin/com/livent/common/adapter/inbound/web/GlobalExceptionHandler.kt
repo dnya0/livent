@@ -45,6 +45,10 @@ class GlobalExceptionHandler {
     fun handleValidation(ex: WebExchangeBindException) =
         errorResponse(ApiErrorCode.INVALID_INPUT)
 
+    @ExceptionHandler(IllegalArgumentException::class)
+    fun handleIllegalArgument(ex: IllegalArgumentException) =
+        errorResponse(ApiErrorCode.INVALID_INPUT)
+
     @ExceptionHandler(Exception::class)
     fun handleException(ex: Exception) =
         errorResponse(ApiErrorCode.INTERNAL_SERVER_ERROR)
