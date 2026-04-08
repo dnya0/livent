@@ -1,6 +1,6 @@
 package com.livent.event.application
 
-import com.livent.common.exception.EventNotFoundException
+import com.livent.event.domain.exception.EventNotFoundException
 import com.livent.event.domain.model.ChatRoom
 import com.livent.event.domain.repository.ChatRoomRepository
 import com.livent.event.domain.model.type.ChatRoomType
@@ -151,6 +151,9 @@ class EventQueryServiceTest {
 
         override fun findById(id: Long): Mono<Event> =
             events.firstOrNull { it.id == id }?.let { Mono.just(it) } ?: Mono.empty()
+
+        override fun existsById(id: Long): Mono<Boolean> =
+            Mono.just(events.any { it.id == id })
     }
 
     private inner class FakeChatRoomRepository : ChatRoomRepository {

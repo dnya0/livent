@@ -10,4 +10,6 @@ interface EventRepository {
     fun findAfterId(cursor: Long, limit: Int): Flux<Event>
 
     fun findById(id: Long): Mono<Event>
+
+    fun existsById(id: Long): Mono<Boolean>
 }

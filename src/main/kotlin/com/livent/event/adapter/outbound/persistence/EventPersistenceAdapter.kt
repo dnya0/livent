@@ -29,6 +29,8 @@ class EventPersistenceAdapter(
     override fun findById(id: Long): Mono<Event> = eventR2dbcRepository.findById(id)
         .map(EventEntity::toDomain)
 
+    override fun existsById(id: Long): Mono<Boolean> = eventR2dbcRepository.existsById(id)
+
     override fun findByEventId(eventId: Long): Flux<ChatRoom> =
         chatRoomR2dbcRepository.findByEventIdOrderByTypeAsc(eventId).map(ChatRoomEntity::toDomain)
 }
