@@ -18,8 +18,13 @@ class EventPersistenceAdapter(
     private val chatRoomR2dbcRepository: ChatRoomR2dbcRepository,
 ) : EventRepository, ChatRoomRepository {
 
-    override fun findAll(): Flux<Event> = eventR2dbcRepository.findAll()
-        .map(EventEntity::toDomain)
+    override fun findFirstPage(limit: Int): Flux<Event> =
+        eventR2dbcRepository.findFirstPage(limit = limit)
+            .map(EventEntity::toDomain)
+
+    override fun findAfterId(cursor: Long, limit: Int): Flux<Event> =
+        eventR2dbcRepository.findAfterId(cursor = cursor, limit = limit)
+            .map(EventEntity::toDomain)
 
     override fun findById(id: Long): Mono<Event> = eventR2dbcRepository.findById(id)
         .map(EventEntity::toDomain)

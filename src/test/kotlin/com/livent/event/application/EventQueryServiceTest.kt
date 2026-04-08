@@ -8,6 +8,7 @@ import com.livent.event.domain.model.Event
 import com.livent.event.domain.repository.EventRepository
 import com.livent.event.domain.model.type.EventVisibility
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.test.StepVerifier
@@ -43,6 +44,77 @@ class EventQueryServiceTest {
             .verifyComplete()
     }
 
+    @Test
+    fun `getEventSlice returns first page when cursor is absent`() {
+        val service = EventQueryService(FakeEventRepository(), FakeChatRoomRepository())
+
+        StepVerifier.create(service.getEventSlice(cursor = null, size = 2))
+            .expectNextMatches { slice ->
+                slice.items.map { it.id } == listOf(1L, 2L) &&
+                    slice.size == 2 &&
+                    slice.hasNext &&
+                    slice.nextCursor == "2"
+            }
+            .verifyComplete()
+    }
+
+    @Test
+    fun `getEventSlice returns events after cursor`() {
+        val service = EventQueryService(FakeEventRepository(), FakeChatRoomRepository())
+
+        StepVerifier.create(service.getEventSlice(cursor = "1", size = 2))
+            .expectNextMatches { slice ->
+                slice.items.map { it.id } == listOf(2L, 3L) &&
+                    slice.size == 2 &&
+                    !slice.hasNext &&
+                    slice.nextCursor == null
+            }
+            .verifyComplete()
+    }
+
+    @Test
+    fun `getEventSlice caps page size to max limit`() {
+        val service = EventQueryService(FakeEventRepository(), FakeChatRoomRepository())
+
+        StepVerifier.create(service.getEventSlice(cursor = null, size = 1000))
+            .expectNextMatches { slice ->
+                slice.items.size == 3 && slice.size == 3 && !slice.hasNext && slice.nextCursor == null
+            }
+            .verifyComplete()
+    }
+
+    @Test
+    fun `getEventSlice returns nextCursor only when more events exist`() {
+        val service = EventQueryService(FakeEventRepository(), FakeChatRoomRepository())
+
+        StepVerifier.create(service.getEventSlice(cursor = null, size = 1))
+            .expectNextMatches { slice ->
+                slice.items.map { it.id } == listOf(1L) &&
+                    slice.size == 1 &&
+                    slice.hasNext &&
+                    slice.nextCursor == "1"
+            }
+            .verifyComplete()
+    }
+
+    @Test
+    fun `getEventSlice rejects negative cursor`() {
+        val service = EventQueryService(FakeEventRepository(), FakeChatRoomRepository())
+
+        assertThrows<IllegalArgumentException> {
+            service.getEventSlice(cursor = "-1", size = 20)
+        }
+    }
+
+    @Test
+    fun `getEventSlice rejects invalid cursor format`() {
+        val service = EventQueryService(FakeEventRepository(), FakeChatRoomRepository())
+
+        assertThrows<IllegalArgumentException> {
+            service.getEventSlice(cursor = "invalid", size = 20)
+        }
+    }
+
     private inner class FakeEventRepository : EventRepository {
         private val events = listOf(
             Event(
@@ -53,9 +125,29 @@ class EventQueryServiceTest {
                 endTime = baseTime.plusHours(2),
                 visibility = EventVisibility.BOTH,
             ),
+            Event(
+                id = 2L,
+                title = "Busan Dev Conference",
+                location = "BEXCO",
+                startTime = baseTime.plusDays(1),
+                endTime = baseTime.plusDays(1).plusHours(4),
+                visibility = EventVisibility.ONSITE,
+            ),
+            Event(
+                id = 3L,
+                title = "Incheon Startup Night",
+                location = "Songdo",
+                startTime = baseTime.plusDays(2),
+                endTime = baseTime.plusDays(2).plusHours(3),
+                visibility = EventVisibility.ONLINE,
+            ),
         )
 
-        override fun findAll(): Flux<Event> = Flux.fromIterable(events)
+        override fun findFirstPage(limit: Int): Flux<Event> =
+            Flux.fromIterable(events.take(limit))
+
+        override fun findAfterId(cursor: Long, limit: Int): Flux<Event> =
+            Flux.fromIterable(events.filter { it.id > cursor }.take(limit))
 
         override fun findById(id: Long): Mono<Event> =
             events.firstOrNull { it.id == id }?.let { Mono.just(it) } ?: Mono.empty()

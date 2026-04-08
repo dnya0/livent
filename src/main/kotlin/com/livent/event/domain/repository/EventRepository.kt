@@ -5,7 +5,9 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 interface EventRepository {
-    fun findAll(): Flux<Event>
+    fun findFirstPage(limit: Int): Flux<Event>
+
+    fun findAfterId(cursor: Long, limit: Int): Flux<Event>
 
     fun findById(id: Long): Mono<Event>
 }
