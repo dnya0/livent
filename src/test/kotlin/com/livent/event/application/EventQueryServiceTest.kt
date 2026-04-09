@@ -1,6 +1,7 @@
 package com.livent.event.application
 
-import com.livent.common.exception.EventNotFoundException
+import com.livent.common.adapter.inbound.web.exception.InvalidRequestException
+import com.livent.event.domain.exception.EventNotFoundException
 import com.livent.event.domain.model.ChatRoom
 import com.livent.event.domain.repository.ChatRoomRepository
 import com.livent.event.domain.model.type.ChatRoomType
@@ -101,7 +102,7 @@ class EventQueryServiceTest {
     fun `getEventSlice rejects negative cursor`() {
         val service = EventQueryService(FakeEventRepository(), FakeChatRoomRepository())
 
-        assertThrows<IllegalArgumentException> {
+        assertThrows<InvalidRequestException> {
             service.getEventSlice(cursor = "-1", size = 20)
         }
     }
@@ -110,7 +111,7 @@ class EventQueryServiceTest {
     fun `getEventSlice rejects invalid cursor format`() {
         val service = EventQueryService(FakeEventRepository(), FakeChatRoomRepository())
 
-        assertThrows<IllegalArgumentException> {
+        assertThrows<InvalidRequestException> {
             service.getEventSlice(cursor = "invalid", size = 20)
         }
     }
@@ -151,6 +152,9 @@ class EventQueryServiceTest {
 
         override fun findById(id: Long): Mono<Event> =
             events.firstOrNull { it.id == id }?.let { Mono.just(it) } ?: Mono.empty()
+
+        override fun existsById(id: Long): Mono<Boolean> =
+            Mono.just(events.any { it.id == id })
     }
 
     private inner class FakeChatRoomRepository : ChatRoomRepository {
