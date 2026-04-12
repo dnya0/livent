@@ -4,7 +4,6 @@ import com.livent.common.adapter.inbound.web.exception.InvalidRequestException
 import com.livent.event.domain.exception.EventNotFoundException
 import com.livent.event.domain.model.ChatRoom
 import com.livent.event.domain.model.Event
-import com.livent.event.domain.repository.ChatRoomRepository
 import com.livent.event.domain.repository.EventRepository
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
@@ -13,7 +12,6 @@ import reactor.core.publisher.Mono
 @Service
 class EventQueryService(
     private val eventRepository: EventRepository,
-    private val chatRoomRepository: ChatRoomRepository,
 ) {
     fun getEventSlice(cursor: String?, size: Int): Mono<EventSlice<Event>> {
         val request = resolveSliceRequest(cursor = cursor, size = size)
@@ -26,7 +24,7 @@ class EventQueryService(
     fun getEvent(eventId: Long): Mono<Event> = eventRepository.findById(eventId)
         .switchIfEmpty(Mono.error(EventNotFoundException()))
 
-    fun getChatRooms(eventId: Long): Flux<ChatRoom> = chatRoomRepository.findByEventId(eventId)
+    fun getChatRooms(eventId: Long): Flux<ChatRoom> = eventRepository.findChatRoomsByEventId(eventId)
         .collectList()
         .flatMapMany { resolveChatRooms(eventId = eventId, chatRooms = it) }
 

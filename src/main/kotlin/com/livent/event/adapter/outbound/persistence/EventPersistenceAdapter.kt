@@ -1,5 +1,6 @@
 package com.livent.event.adapter.outbound.persistence
 
+import java.time.ZoneId
 import com.livent.event.adapter.outbound.persistence.entity.ChatRoomEntity
 import com.livent.event.adapter.outbound.persistence.entity.EventEntity
 import com.livent.event.adapter.outbound.persistence.repository.ChatRoomR2dbcRepository
@@ -7,7 +8,6 @@ import com.livent.event.adapter.outbound.persistence.repository.EventR2dbcReposi
 import com.livent.event.domain.model.ChatRoom
 import com.livent.event.domain.model.Event
 import com.livent.event.domain.model.value.EventSchedule
-import com.livent.event.domain.repository.ChatRoomRepository
 import com.livent.event.domain.repository.EventRepository
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
@@ -17,7 +17,7 @@ import reactor.core.publisher.Mono
 class EventPersistenceAdapter(
     private val eventR2dbcRepository: EventR2dbcRepository,
     private val chatRoomR2dbcRepository: ChatRoomR2dbcRepository,
-) : EventRepository, ChatRoomRepository {
+) : EventRepository {
 
     override fun findFirstPage(limit: Int): Flux<Event> =
         eventR2dbcRepository.findFirstPage(limit = limit)
@@ -32,7 +32,7 @@ class EventPersistenceAdapter(
 
     override fun existsById(id: Long): Mono<Boolean> = eventR2dbcRepository.existsById(id)
 
-    override fun findByEventId(eventId: Long): Flux<ChatRoom> =
+    override fun findChatRoomsByEventId(eventId: Long): Flux<ChatRoom> =
         chatRoomR2dbcRepository.findByEventIdOrderByTypeAsc(eventId).map(ChatRoomEntity::toDomain)
 }
 
@@ -40,7 +40,7 @@ private fun EventEntity.toDomain(): Event = Event(
     id = requireNotNull(id) { "Event id must not be null when reading (title='$title')." },
     title = title,
     location = location,
-    schedule = EventSchedule(startTime = startTime, endTime = endTime),
+    schedule = EventSchedule(startTime = startTime, endTime = endTime, timezone = ZoneId.of(timezone)),
     visibility = visibility,
 )
 

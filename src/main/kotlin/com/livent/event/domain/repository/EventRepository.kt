@@ -1,5 +1,6 @@
 package com.livent.event.domain.repository
 
+import com.livent.event.domain.model.ChatRoom
 import com.livent.event.domain.model.Event
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -12,4 +13,6 @@ interface EventRepository {
     fun findById(id: Long): Mono<Event>
 
     fun existsById(id: Long): Mono<Boolean>
+
+    fun findChatRoomsByEventId(eventId: Long): Flux<ChatRoom>
 }

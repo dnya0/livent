@@ -1,0 +1,4 @@
+ALTER TABLE events ADD COLUMN timezone VARCHAR(64);
+UPDATE events SET timezone = 'UTC' WHERE timezone IS NULL;
+ALTER TABLE events ALTER COLUMN timezone SET NOT NULL;
+ALTER TABLE events ALTER COLUMN timezone DROP DEFAULT;
