@@ -6,6 +6,7 @@ import com.livent.event.adapter.outbound.persistence.repository.ChatRoomR2dbcRep
 import com.livent.event.adapter.outbound.persistence.repository.EventR2dbcRepository
 import com.livent.event.domain.model.ChatRoom
 import com.livent.event.domain.model.Event
+import com.livent.event.domain.model.value.EventSchedule
 import com.livent.event.domain.repository.ChatRoomRepository
 import com.livent.event.domain.repository.EventRepository
 import org.springframework.stereotype.Component
@@ -36,16 +37,15 @@ class EventPersistenceAdapter(
 }
 
 private fun EventEntity.toDomain(): Event = Event(
-    id = requireNotNull(id) { "Event id must not be null when reading." },
+    id = requireNotNull(id) { "Event id must not be null when reading (title='$title')." },
     title = title,
     location = location,
-    startTime = startTime,
-    endTime = endTime,
+    schedule = EventSchedule(startTime = startTime, endTime = endTime),
     visibility = visibility,
 )
 
 private fun ChatRoomEntity.toDomain(): ChatRoom = ChatRoom(
-    id = requireNotNull(id) { "ChatRoom id must not be null when reading." },
+    id = requireNotNull(id) { "ChatRoom id must not be null when reading (eventId=$eventId, type=$type)." },
     eventId = eventId,
     type = type,
     name = name,
