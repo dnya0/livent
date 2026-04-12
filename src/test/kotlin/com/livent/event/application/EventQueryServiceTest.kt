@@ -48,6 +48,15 @@ class EventQueryServiceTest {
     }
 
     @Test
+    fun `getChatRooms throws EventNotFoundException when event missing`() {
+        val service = EventQueryService(FakeEventRepository())
+
+        StepVerifier.create(service.getChatRooms(999L))
+            .expectError(EventNotFoundException::class.java)
+            .verify()
+    }
+
+    @Test
     fun `getEventSlice returns first page when cursor is absent`() {
         val service = EventQueryService(FakeEventRepository())
 
@@ -156,7 +165,8 @@ class EventQueryServiceTest {
             Mono.just(events.any { it.id == id })
 
         override fun findChatRoomsByEventId(eventId: Long): Flux<ChatRoom> =
-            Flux.just(
+            if (events.none { it.id == eventId }) Flux.empty()
+            else Flux.just(
                 ChatRoom(id = 1L, eventId = eventId, type = ChatRoomType.GLOBAL, name = "전체 채팅"),
                 ChatRoom(id = 2L, eventId = eventId, type = ChatRoomType.LOCAL, name = "현장 채팅"),
             )
