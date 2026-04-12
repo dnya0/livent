@@ -1,6 +1,7 @@
 package com.livent.event.application
 
-import java.time.OffsetDateTime
+import java.time.Instant
+import java.time.ZoneId
 import com.livent.common.adapter.inbound.web.exception.InvalidRequestException
 import com.livent.event.domain.exception.EventNotFoundException
 import com.livent.event.domain.model.ChatRoom
@@ -8,7 +9,6 @@ import com.livent.event.domain.model.Event
 import com.livent.event.domain.model.type.ChatRoomType
 import com.livent.event.domain.model.type.EventVisibility
 import com.livent.event.domain.model.value.EventSchedule
-import com.livent.event.domain.repository.ChatRoomRepository
 import com.livent.event.domain.repository.EventRepository
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -17,11 +17,12 @@ import reactor.core.publisher.Mono
 import reactor.test.StepVerifier
 
 class EventQueryServiceTest {
-    private val baseTime: OffsetDateTime = OffsetDateTime.parse("2026-04-07T10:00:00+09:00")
+    private val seoulZone: ZoneId = ZoneId.of("Asia/Seoul")
+    private val baseTime: Instant = Instant.parse("2026-04-07T01:00:00Z")
 
     @Test
     fun `getEvent returns event when found`() {
-        val service = EventQueryService(FakeEventRepository(), FakeChatRoomRepository())
+        val service = EventQueryService(FakeEventRepository())
 
         StepVerifier.create(service.getEvent(1L))
             .expectNextMatches { it.id == 1L && it.title == "Seoul Tech Meetup" }
@@ -30,7 +31,7 @@ class EventQueryServiceTest {
 
     @Test
     fun `getEvent throws EventNotFoundException when event missing`() {
-        val service = EventQueryService(FakeEventRepository(), FakeChatRoomRepository())
+        val service = EventQueryService(FakeEventRepository())
 
         StepVerifier.create(service.getEvent(999L))
             .expectError(EventNotFoundException::class.java)
@@ -39,7 +40,7 @@ class EventQueryServiceTest {
 
     @Test
     fun `getChatRooms requires existing event before loading rooms`() {
-        val service = EventQueryService(FakeEventRepository(), FakeChatRoomRepository())
+        val service = EventQueryService(FakeEventRepository())
 
         StepVerifier.create(service.getChatRooms(1L))
             .expectNextCount(2)
@@ -48,7 +49,7 @@ class EventQueryServiceTest {
 
     @Test
     fun `getEventSlice returns first page when cursor is absent`() {
-        val service = EventQueryService(FakeEventRepository(), FakeChatRoomRepository())
+        val service = EventQueryService(FakeEventRepository())
 
         StepVerifier.create(service.getEventSlice(cursor = null, size = 2))
             .expectNextMatches { slice ->
@@ -62,7 +63,7 @@ class EventQueryServiceTest {
 
     @Test
     fun `getEventSlice returns events after cursor`() {
-        val service = EventQueryService(FakeEventRepository(), FakeChatRoomRepository())
+        val service = EventQueryService(FakeEventRepository())
 
         StepVerifier.create(service.getEventSlice(cursor = "1", size = 2))
             .expectNextMatches { slice ->
@@ -76,7 +77,7 @@ class EventQueryServiceTest {
 
     @Test
     fun `getEventSlice caps page size to max limit`() {
-        val service = EventQueryService(FakeEventRepository(), FakeChatRoomRepository())
+        val service = EventQueryService(FakeEventRepository())
 
         StepVerifier.create(service.getEventSlice(cursor = null, size = 1000))
             .expectNextMatches { slice ->
@@ -87,7 +88,7 @@ class EventQueryServiceTest {
 
     @Test
     fun `getEventSlice returns nextCursor only when more events exist`() {
-        val service = EventQueryService(FakeEventRepository(), FakeChatRoomRepository())
+        val service = EventQueryService(FakeEventRepository())
 
         StepVerifier.create(service.getEventSlice(cursor = null, size = 1))
             .expectNextMatches { slice ->
@@ -101,7 +102,7 @@ class EventQueryServiceTest {
 
     @Test
     fun `getEventSlice rejects negative cursor`() {
-        val service = EventQueryService(FakeEventRepository(), FakeChatRoomRepository())
+        val service = EventQueryService(FakeEventRepository())
 
         assertThrows<InvalidRequestException> {
             service.getEventSlice(cursor = "-1", size = 20)
@@ -110,7 +111,7 @@ class EventQueryServiceTest {
 
     @Test
     fun `getEventSlice rejects invalid cursor format`() {
-        val service = EventQueryService(FakeEventRepository(), FakeChatRoomRepository())
+        val service = EventQueryService(FakeEventRepository())
 
         assertThrows<InvalidRequestException> {
             service.getEventSlice(cursor = "invalid", size = 20)
@@ -123,21 +124,21 @@ class EventQueryServiceTest {
                 id = 1L,
                 title = "Seoul Tech Meetup",
                 location = "COEX",
-                schedule = EventSchedule(startTime = baseTime, endTime = baseTime.plusHours(2)),
+                schedule = EventSchedule(startTime = baseTime, endTime = baseTime.plusSeconds(7200), timezone = seoulZone),
                 visibility = EventVisibility.BOTH,
             ),
             Event(
                 id = 2L,
                 title = "Busan Dev Conference",
                 location = "BEXCO",
-                schedule = EventSchedule(startTime = baseTime.plusDays(1), endTime = baseTime.plusDays(1).plusHours(4)),
+                schedule = EventSchedule(startTime = baseTime.plusSeconds(86400), endTime = baseTime.plusSeconds(86400 + 14400), timezone = seoulZone),
                 visibility = EventVisibility.ONSITE,
             ),
             Event(
                 id = 3L,
                 title = "Incheon Startup Night",
                 location = "Songdo",
-                schedule = EventSchedule(startTime = baseTime.plusDays(2), endTime = baseTime.plusDays(2).plusHours(3)),
+                schedule = EventSchedule(startTime = baseTime.plusSeconds(172800), endTime = baseTime.plusSeconds(172800 + 10800), timezone = seoulZone),
                 visibility = EventVisibility.ONLINE,
             ),
         )
@@ -153,10 +154,8 @@ class EventQueryServiceTest {
 
         override fun existsById(id: Long): Mono<Boolean> =
             Mono.just(events.any { it.id == id })
-    }
 
-    private inner class FakeChatRoomRepository : ChatRoomRepository {
-        override fun findByEventId(eventId: Long): Flux<ChatRoom> =
+        override fun findChatRoomsByEventId(eventId: Long): Flux<ChatRoom> =
             Flux.just(
                 ChatRoom(id = 1L, eventId = eventId, type = ChatRoomType.GLOBAL, name = "전체 채팅"),
                 ChatRoom(id = 2L, eventId = eventId, type = ChatRoomType.LOCAL, name = "현장 채팅"),

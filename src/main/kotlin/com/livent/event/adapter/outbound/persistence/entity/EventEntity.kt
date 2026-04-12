@@ -1,6 +1,6 @@
 package com.livent.event.adapter.outbound.persistence.entity
 
-import java.time.OffsetDateTime
+import java.time.Instant
 import com.livent.event.domain.model.type.EventVisibility
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Table
@@ -11,7 +11,8 @@ data class EventEntity(
     val id: Long? = null,
     val title: String,
     val location: String,
-    val startTime: OffsetDateTime,
-    val endTime: OffsetDateTime,
+    val startTime: Instant,
+    val endTime: Instant,
+    val timezone: String,
     val visibility: EventVisibility,
 )

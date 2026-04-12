@@ -1,6 +1,6 @@
 package com.livent.event.adapter.inbound.web
 
-import java.time.OffsetDateTime
+import java.time.Instant
 import com.livent.event.domain.model.ChatRoom
 import com.livent.event.domain.model.Event
 import com.livent.event.domain.model.type.ChatRoomType
@@ -10,8 +10,9 @@ data class EventResponse(
     val id: Long,
     val title: String,
     val location: String,
-    val startTime: OffsetDateTime,
-    val endTime: OffsetDateTime,
+    val startTime: Instant,
+    val endTime: Instant,
+    val timezone: String,
     val visibility: EventVisibility,
 )
 
@@ -28,6 +29,7 @@ fun Event.toResponse(): EventResponse = EventResponse(
     location = location,
     startTime = schedule.startTime,
     endTime = schedule.endTime,
+    timezone = schedule.timezone.id,
     visibility = visibility,
 )
 
