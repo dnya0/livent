@@ -1,19 +1,20 @@
 package com.livent.event.application
 
+import java.time.OffsetDateTime
 import com.livent.common.adapter.inbound.web.exception.InvalidRequestException
 import com.livent.event.domain.exception.EventNotFoundException
 import com.livent.event.domain.model.ChatRoom
-import com.livent.event.domain.repository.ChatRoomRepository
-import com.livent.event.domain.model.type.ChatRoomType
 import com.livent.event.domain.model.Event
-import com.livent.event.domain.repository.EventRepository
+import com.livent.event.domain.model.type.ChatRoomType
 import com.livent.event.domain.model.type.EventVisibility
+import com.livent.event.domain.model.value.EventSchedule
+import com.livent.event.domain.repository.ChatRoomRepository
+import com.livent.event.domain.repository.EventRepository
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.test.StepVerifier
-import java.time.OffsetDateTime
 
 class EventQueryServiceTest {
     private val baseTime: OffsetDateTime = OffsetDateTime.parse("2026-04-07T10:00:00+09:00")
@@ -122,24 +123,21 @@ class EventQueryServiceTest {
                 id = 1L,
                 title = "Seoul Tech Meetup",
                 location = "COEX",
-                startTime = baseTime,
-                endTime = baseTime.plusHours(2),
+                schedule = EventSchedule(startTime = baseTime, endTime = baseTime.plusHours(2)),
                 visibility = EventVisibility.BOTH,
             ),
             Event(
                 id = 2L,
                 title = "Busan Dev Conference",
                 location = "BEXCO",
-                startTime = baseTime.plusDays(1),
-                endTime = baseTime.plusDays(1).plusHours(4),
+                schedule = EventSchedule(startTime = baseTime.plusDays(1), endTime = baseTime.plusDays(1).plusHours(4)),
                 visibility = EventVisibility.ONSITE,
             ),
             Event(
                 id = 3L,
                 title = "Incheon Startup Night",
                 location = "Songdo",
-                startTime = baseTime.plusDays(2),
-                endTime = baseTime.plusDays(2).plusHours(3),
+                schedule = EventSchedule(startTime = baseTime.plusDays(2), endTime = baseTime.plusDays(2).plusHours(3)),
                 visibility = EventVisibility.ONLINE,
             ),
         )

@@ -26,8 +26,8 @@ fun Event.toResponse(): EventResponse = EventResponse(
     id = id,
     title = title,
     location = location,
-    startTime = startTime,
-    endTime = endTime,
+    startTime = schedule.startTime,
+    endTime = schedule.endTime,
     visibility = visibility,
 )
 

@@ -6,6 +6,7 @@ import com.livent.event.adapter.outbound.persistence.repository.ChatRoomR2dbcRep
 import com.livent.event.adapter.outbound.persistence.repository.EventR2dbcRepository
 import com.livent.event.domain.model.ChatRoom
 import com.livent.event.domain.model.Event
+import com.livent.event.domain.model.value.EventSchedule
 import com.livent.event.domain.repository.ChatRoomRepository
 import com.livent.event.domain.repository.EventRepository
 import org.springframework.stereotype.Component
@@ -39,8 +40,7 @@ private fun EventEntity.toDomain(): Event = Event(
     id = requireNotNull(id) { "Event id must not be null when reading." },
     title = title,
     location = location,
-    startTime = startTime,
-    endTime = endTime,
+    schedule = EventSchedule(startTime = startTime, endTime = endTime),
     visibility = visibility,
 )
 
