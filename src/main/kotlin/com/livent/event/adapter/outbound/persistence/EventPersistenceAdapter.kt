@@ -37,7 +37,7 @@ class EventPersistenceAdapter(
 }
 
 private fun EventEntity.toDomain(): Event = Event(
-    id = requireNotNull(id) { "Event id must not be null when reading." },
+    id = requireNotNull(id) { "Event id must not be null when reading (title='$title')." },
     title = title,
     location = location,
     schedule = EventSchedule(startTime = startTime, endTime = endTime),
@@ -45,7 +45,7 @@ private fun EventEntity.toDomain(): Event = Event(
 )
 
 private fun ChatRoomEntity.toDomain(): ChatRoom = ChatRoom(
-    id = requireNotNull(id) { "ChatRoom id must not be null when reading." },
+    id = requireNotNull(id) { "ChatRoom id must not be null when reading (eventId=$eventId, type=$type)." },
     eventId = eventId,
     type = type,
     name = name,
