@@ -8,7 +8,7 @@ import reactor.core.publisher.Flux
 interface EventR2dbcRepository : ReactiveCrudRepository<EventEntity, Long> {
     @Query(
         """
-        SELECT id, title, location, start_time, end_time, visibility
+        SELECT id, title, location, start_time, end_time, timezone, visibility
         FROM events
         ORDER BY id ASC
         LIMIT :limit
@@ -18,7 +18,7 @@ interface EventR2dbcRepository : ReactiveCrudRepository<EventEntity, Long> {
 
     @Query(
         """
-        SELECT id, title, location, start_time, end_time, visibility
+        SELECT id, title, location, start_time, end_time, timezone, visibility
         FROM events
         WHERE id > :cursor
         ORDER BY id ASC

@@ -4,6 +4,7 @@ import com.livent.common.adapter.inbound.web.exception.InvalidRequestException
 import com.livent.event.domain.exception.EventNotFoundException
 import com.livent.event.domain.model.ChatRoom
 import com.livent.event.domain.model.Event
+import com.livent.event.domain.model.value.EventId
 import com.livent.event.domain.repository.EventRepository
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
@@ -21,12 +22,17 @@ class EventQueryService(
             .map { toEventSlice(results = it, pageSize = request.pageSize) }
     }
 
-    fun getEvent(eventId: Long): Mono<Event> = eventRepository.findById(eventId)
+    fun getEvent(eventId: Long): Mono<Event> = eventRepository.findById(resolveEventId(eventId))
         .switchIfEmpty(Mono.error(EventNotFoundException()))
 
-    fun getChatRooms(eventId: Long): Flux<ChatRoom> = eventRepository.findChatRoomsByEventId(eventId)
-        .collectList()
-        .flatMapMany { resolveChatRooms(eventId = eventId, chatRooms = it) }
+    fun getChatRooms(eventId: Long): Flux<ChatRoom> {
+        val resolvedEventId = resolveEventId(eventId)
+
+        return resolveChatRooms(
+            eventId = resolvedEventId,
+            chatRooms = eventRepository.findChatRoomsByEventId(resolvedEventId),
+        )
+    }
 
     companion object {
         const val DEFAULT_PAGE_SIZE: Int = 20
@@ -66,28 +72,36 @@ class EventQueryService(
         )
     }
 
-    private fun resolveChatRooms(eventId: Long, chatRooms: List<ChatRoom>): Flux<ChatRoom> =
-        if (chatRooms.isNotEmpty()) {
-            Flux.fromIterable(chatRooms)
-        } else {
-            eventRepository.existsById(eventId)
-                .flatMapMany { exists ->
-                    if (exists) Flux.empty()
-                    else Flux.error(EventNotFoundException())
-                }
-        }
+    private fun resolveChatRooms(eventId: EventId, chatRooms: Flux<ChatRoom>): Flux<ChatRoom> =
+        chatRooms.switchIfEmpty(
+            Flux.defer {
+                eventRepository.existsById(eventId)
+                    .flatMapMany { exists ->
+                        if (exists) Flux.empty()
+                        else Flux.error(EventNotFoundException())
+                    }
+            },
+        )
 
-    private fun decodeCursor(cursor: String?): Long? {
+    private fun decodeCursor(cursor: String?): EventId? {
         if (cursor == null) return null
 
-        return cursor.toLongOrNull()
-            ?.takeIf { it >= 0 }
-            ?: throw InvalidRequestException("cursor must be a non-negative number.")
+        val raw = cursor.toLongOrNull()
+            ?.takeIf { it > 0 }
+            ?: throw InvalidRequestException("cursor must be a positive number.")
+
+        return EventId.of(raw)
+    }
+
+    private fun resolveEventId(eventId: Long): EventId = try {
+        EventId.of(eventId)
+    } catch (ex: IllegalArgumentException) {
+        throw InvalidRequestException("eventId must be a positive number.", ex)
     }
 }
 
 private data class EventSliceRequest(
-    val cursorId: Long?,
+    val cursorId: EventId?,
     val pageSize: Int,
     val fetchLimit: Int,
 )
