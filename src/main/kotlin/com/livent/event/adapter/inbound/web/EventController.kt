@@ -29,7 +29,7 @@ class EventController(
 ) {
     @PostMapping
     fun createEvent(@Valid @RequestBody request: EventCreateRequest): Mono<ApiResponse<EventResponse>> =
-        eventCommandService.createEvent(request.toCommand())
+        eventCommandService.createEvent(request.toCreateCommand())
             .map { responseOf(it.toResponse()) }
 
     @PatchMapping("/{eventId}")
@@ -37,13 +37,13 @@ class EventController(
         @PathVariable eventId: Long,
         @Valid @RequestBody request: EventUpdateRequest,
     ): Mono<ApiResponse<EventResponse>> =
-        eventCommandService.updateEvent(eventId = eventId, command = request.toCommand())
+        eventCommandService.updateEvent(eventId = eventId, command = request.toUpdateCommand())
             .map { responseOf(it.toResponse()) }
 
     @DeleteMapping("/{eventId}")
-    fun deleteEvent(@PathVariable eventId: Long): Mono<ApiResponse<Unit>> =
+    fun deleteEvent(@PathVariable eventId: Long): Mono<ApiResponse<DeleteEventResponse>> =
         eventCommandService.deleteEvent(eventId)
-            .thenReturn(responseOf(Unit))
+            .map { responseOf(it.toResponse()) }
 
     @GetMapping
     fun getEvents(@Valid @ModelAttribute cursorRequest: CursorRequest): Mono<CursorApiResponse<EventResponse>> =

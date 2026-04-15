@@ -1,11 +1,9 @@
 package com.livent.event.application
 
-import java.time.Instant
 import com.livent.common.adapter.inbound.web.exception.InvalidRequestException
 import com.livent.event.domain.exception.EventNotFoundException
 import com.livent.event.domain.model.Event
 import com.livent.event.domain.model.NewEvent
-import com.livent.event.domain.model.type.EventVisibility
 import com.livent.event.domain.model.value.EventId
 import com.livent.event.domain.model.value.EventTimezone
 import com.livent.event.domain.repository.EventRepository
@@ -46,12 +44,14 @@ class EventCommandService(
             .flatMap(eventRepository::update)
     }
 
-    fun deleteEvent(eventId: Long): Mono<Void> {
+    fun deleteEvent(eventId: Long): Mono<DeleteEventResult> {
         val id = resolveEventId(eventId)
 
-        return eventRepository.findById(id)
-            .switchIfEmpty(Mono.error(EventNotFoundException()))
-            .flatMap { eventRepository.deleteById(it.id) }
+        return eventRepository.existsById(id)
+            .flatMap { exists ->
+                if (exists) eventRepository.deleteById(id).map(::DeleteEventResult)
+                else Mono.error(EventNotFoundException())
+            }
     }
 
     private fun parseTimezone(timezone: String): EventTimezone = try {
@@ -67,20 +67,6 @@ class EventCommandService(
     }
 }
 
-data class CreateEventCommand(
-    val title: String,
-    val location: String,
-    val startTime: Instant,
-    val endTime: Instant,
-    val timezone: String,
-    val visibility: EventVisibility,
-)
-
-data class UpdateEventCommand(
-    val title: String,
-    val location: String,
-    val startTime: Instant,
-    val endTime: Instant,
-    val timezone: String,
-    val visibility: EventVisibility,
+data class DeleteEventResult(
+    val deletedCount: Long,
 )

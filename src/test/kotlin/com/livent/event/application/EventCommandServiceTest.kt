@@ -1,39 +1,27 @@
 package com.livent.event.application
 
 import java.time.Instant
+import kotlin.test.assertEquals
 import com.livent.common.adapter.inbound.web.exception.InvalidRequestException
 import com.livent.event.domain.exception.EventNotFoundException
 import com.livent.event.domain.model.ChatRoom
 import com.livent.event.domain.model.Event
 import com.livent.event.domain.model.NewEvent
-import com.livent.event.domain.model.value.EventDetails
 import com.livent.event.domain.model.type.EventVisibility
+import com.livent.event.domain.model.value.EventDetails
 import com.livent.event.domain.model.value.EventId
 import com.livent.event.domain.model.value.EventLocation
 import com.livent.event.domain.model.value.EventSchedule
-import com.livent.event.domain.model.value.EventTitle
 import com.livent.event.domain.model.value.EventTimezone
+import com.livent.event.domain.model.value.EventTitle
 import com.livent.event.domain.repository.EventRepository
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import kotlin.test.assertEquals
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.test.StepVerifier
 
 class EventCommandServiceTest {
-    private val existingEvent = Event(
-        id = EventId.of(1L),
-        details = EventDetails.create(
-            title = "Seoul Tech Meetup",
-            location = "COEX",
-            startTime = Instant.parse("2026-04-20T10:00:00Z"),
-            endTime = Instant.parse("2026-04-20T12:00:00Z"),
-            timezone = EventTimezone.of("Asia/Seoul"),
-            visibility = EventVisibility.BOTH,
-        ),
-    )
-
     @Test
     fun `createEvent saves event with trimmed fields and timezone`() {
         val repository = FakeEventRepository()
@@ -225,6 +213,7 @@ class EventCommandServiceTest {
         val service = EventCommandService(FakeEventRepository())
 
         StepVerifier.create(service.deleteEvent(1L))
+            .expectNextMatches { it.deletedCount == 1L }
             .verifyComplete()
     }
 
@@ -265,9 +254,9 @@ class EventCommandServiceTest {
 
         override fun update(event: Event): Mono<Event> = Mono.just(event)
 
-        override fun deleteById(id: EventId): Mono<Void> = Mono.empty()
+        override fun deleteById(id: EventId): Mono<Long> = Mono.just(1L)
 
-        override fun existsById(id: EventId): Mono<Boolean> = Mono.just(false)
+        override fun existsById(id: EventId): Mono<Boolean> = Mono.just(existingEvent.id == id)
 
         override fun findChatRoomsByEventId(eventId: EventId): Flux<ChatRoom> = Flux.empty()
     }

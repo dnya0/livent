@@ -25,9 +25,14 @@ class EventQueryService(
     fun getEvent(eventId: Long): Mono<Event> = eventRepository.findById(resolveEventId(eventId))
         .switchIfEmpty(Mono.error(EventNotFoundException()))
 
-    fun getChatRooms(eventId: Long): Flux<ChatRoom> = eventRepository.findChatRoomsByEventId(resolveEventId(eventId))
-        .collectList()
-        .flatMapMany { resolveChatRooms(eventId = resolveEventId(eventId), chatRooms = it) }
+    fun getChatRooms(eventId: Long): Flux<ChatRoom> {
+        val resolvedEventId = resolveEventId(eventId)
+
+        return resolveChatRooms(
+            eventId = resolvedEventId,
+            chatRooms = eventRepository.findChatRoomsByEventId(resolvedEventId),
+        )
+    }
 
     companion object {
         const val DEFAULT_PAGE_SIZE: Int = 20
@@ -67,16 +72,16 @@ class EventQueryService(
         )
     }
 
-    private fun resolveChatRooms(eventId: EventId, chatRooms: List<ChatRoom>): Flux<ChatRoom> =
-        if (chatRooms.isNotEmpty()) {
-            Flux.fromIterable(chatRooms)
-        } else {
-            eventRepository.existsById(eventId)
-                .flatMapMany { exists ->
-                    if (exists) Flux.empty()
-                    else Flux.error(EventNotFoundException())
-                }
-        }
+    private fun resolveChatRooms(eventId: EventId, chatRooms: Flux<ChatRoom>): Flux<ChatRoom> =
+        chatRooms.switchIfEmpty(
+            Flux.defer {
+                eventRepository.existsById(eventId)
+                    .flatMapMany { exists ->
+                        if (exists) Flux.empty()
+                        else Flux.error(EventNotFoundException())
+                    }
+            },
+        )
 
     private fun decodeCursor(cursor: String?): EventId? {
         if (cursor == null) return null

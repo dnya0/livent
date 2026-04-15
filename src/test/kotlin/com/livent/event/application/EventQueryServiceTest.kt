@@ -159,7 +159,11 @@ class EventQueryServiceTest {
                 details = EventDetails(
                     title = EventTitle.of("Seoul Tech Meetup"),
                     location = EventLocation.of("COEX"),
-                    schedule = EventSchedule(startTime = baseTime, endTime = baseTime.plusSeconds(7200), timezone = seoulZone),
+                    schedule = EventSchedule(
+                        startTime = baseTime,
+                        endTime = baseTime.plusSeconds(7200),
+                        timezone = seoulZone
+                    ),
                     visibility = EventVisibility.BOTH,
                 ),
             ),
@@ -168,7 +172,11 @@ class EventQueryServiceTest {
                 details = EventDetails(
                     title = EventTitle.of("Busan Dev Conference"),
                     location = EventLocation.of("BEXCO"),
-                    schedule = EventSchedule(startTime = baseTime.plusSeconds(86400), endTime = baseTime.plusSeconds(86400 + 14400), timezone = seoulZone),
+                    schedule = EventSchedule(
+                        startTime = baseTime.plusSeconds(86400),
+                        endTime = baseTime.plusSeconds(86400 + 14400),
+                        timezone = seoulZone
+                    ),
                     visibility = EventVisibility.ONSITE,
                 ),
             ),
@@ -177,7 +185,11 @@ class EventQueryServiceTest {
                 details = EventDetails(
                     title = EventTitle.of("Incheon Startup Night"),
                     location = EventLocation.of("Songdo"),
-                    schedule = EventSchedule(startTime = baseTime.plusSeconds(172800), endTime = baseTime.plusSeconds(172800 + 10800), timezone = seoulZone),
+                    schedule = EventSchedule(
+                        startTime = baseTime.plusSeconds(172800),
+                        endTime = baseTime.plusSeconds(172800 + 10800),
+                        timezone = seoulZone
+                    ),
                     visibility = EventVisibility.ONLINE,
                 ),
             ),
@@ -196,7 +208,7 @@ class EventQueryServiceTest {
 
         override fun update(event: Event): Mono<Event> = Mono.just(event)
 
-        override fun deleteById(id: EventId): Mono<Void> = Mono.empty()
+        override fun deleteById(id: EventId): Mono<Long> = Mono.just(1L)
 
         override fun existsById(id: EventId): Mono<Boolean> =
             Mono.just(events.any { it.id == id })

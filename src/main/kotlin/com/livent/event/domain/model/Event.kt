@@ -2,8 +2,8 @@ package com.livent.event.domain.model
 
 import java.time.Instant
 import com.livent.event.domain.model.type.EventVisibility
-import com.livent.event.domain.model.value.EventId
 import com.livent.event.domain.model.value.EventDetails
+import com.livent.event.domain.model.value.EventId
 import com.livent.event.domain.model.value.EventTimezone
 
 data class Event(

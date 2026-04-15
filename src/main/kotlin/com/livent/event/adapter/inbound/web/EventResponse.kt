@@ -1,6 +1,7 @@
 package com.livent.event.adapter.inbound.web
 
 import java.time.Instant
+import com.livent.event.application.DeleteEventResult
 import com.livent.event.domain.model.ChatRoom
 import com.livent.event.domain.model.Event
 import com.livent.event.domain.model.type.ChatRoomType
@@ -23,6 +24,10 @@ data class ChatRoomResponse(
     val name: String,
 )
 
+data class DeleteEventResponse(
+    val deletedCount: Long,
+)
+
 fun Event.toResponse(): EventResponse = EventResponse(
     id = id.value,
     title = title.value,
@@ -38,4 +43,8 @@ fun ChatRoom.toResponse(): ChatRoomResponse = ChatRoomResponse(
     eventId = eventId.value,
     type = type,
     name = name.value,
+)
+
+fun DeleteEventResult.toResponse(): DeleteEventResponse = DeleteEventResponse(
+    deletedCount = deletedCount,
 )

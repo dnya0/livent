@@ -18,7 +18,7 @@ interface EventRepository {
 
     fun update(event: Event): Mono<Event>
 
-    fun deleteById(id: EventId): Mono<Void>
+    fun deleteById(id: EventId): Mono<Long>
 
     fun existsById(id: EventId): Mono<Boolean>
 

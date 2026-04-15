@@ -97,6 +97,8 @@ class EventControllerTest {
             .uri("/events/1")
             .exchange()
             .expectStatus().isOk
+            .expectBody()
+            .jsonPath("$.data.deletedCount").isEqualTo(1)
     }
 
     @Test
@@ -121,7 +123,7 @@ class EventControllerTest {
     }
 
     private class FakeEventRepository : EventRepository {
-        private var event: Event = Event(
+        private var event: Event? = Event(
             id = EventId.of(1L),
             details = EventDetails.create(
                 title = "Seoul Tech Meetup",
@@ -133,45 +135,38 @@ class EventControllerTest {
             ),
         )
 
-        override fun findFirstPage(limit: Int): Flux<Event> = Flux.just(event).take(limit.toLong())
+        override fun findFirstPage(limit: Int): Flux<Event> =
+            event?.let { Flux.just(it).take(limit.toLong()) } ?: Flux.empty()
 
         override fun findAfterId(cursor: EventId, limit: Int): Flux<Event> =
-            if (event.id.value > cursor.value) Flux.just(event).take(limit.toLong()) else Flux.empty()
+            event?.takeIf { it.id.value > cursor.value }
+                ?.let { Flux.just(it).take(limit.toLong()) }
+                ?: Flux.empty()
 
         override fun findById(id: EventId): Mono<Event> =
-            if (event.id == id) Mono.just(event) else Mono.empty()
+            event?.takeIf { it.id == id }?.let { Mono.just(it) } ?: Mono.empty()
 
         override fun save(event: NewEvent): Mono<Event> {
             this.event = event.persist(EventId.of(1L))
-            return Mono.just(this.event)
+            return Mono.just(requireNotNull(this.event))
         }
 
         override fun update(event: Event): Mono<Event> {
             this.event = event
-            return Mono.just(this.event)
+            return Mono.just(requireNotNull(this.event))
         }
 
-        override fun deleteById(id: EventId): Mono<Void> {
-            if (event.id == id) {
-                event = Event(
-                    id = EventId.of(999L),
-                    details = EventDetails.create(
-                        title = "Deleted",
-                        location = "N/A",
-                        startTime = Instant.parse("2026-04-22T10:00:00Z"),
-                        endTime = Instant.parse("2026-04-22T11:00:00Z"),
-                        timezone = EventTimezone.of("Asia/Seoul"),
-                        visibility = EventVisibility.ONSITE,
-                    ),
-                )
+        override fun deleteById(id: EventId): Mono<Long> {
+            if (event?.id == id) {
+                event = null
             }
-            return Mono.empty()
+            return Mono.just(1L)
         }
 
-        override fun existsById(id: EventId): Mono<Boolean> = Mono.just(event.id == id)
+        override fun existsById(id: EventId): Mono<Boolean> = Mono.just(event?.id == id)
 
         override fun findChatRoomsByEventId(eventId: EventId): Flux<ChatRoom> =
-            if (event.id != eventId) Flux.empty()
+            if (event?.id != eventId) Flux.empty()
             else Flux.just(
                 ChatRoom(
                     id = ChatRoomId.of(1L),

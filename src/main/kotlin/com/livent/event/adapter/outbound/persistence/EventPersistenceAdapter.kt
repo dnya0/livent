@@ -37,31 +37,14 @@ class EventPersistenceAdapter(
     override fun findById(id: EventId): Mono<Event> = eventR2dbcRepository.findById(id.value)
         .map(EventEntity::toDomain)
 
-    override fun save(event: NewEvent): Mono<Event> = eventR2dbcRepository.save(
-        EventEntity(
-            id = null,
-            title = event.title.value,
-            location = event.location.value,
-            startTime = event.schedule.startTime,
-            endTime = event.schedule.endTime,
-            timezone = event.schedule.timezone.id,
-            visibility = event.visibility,
-        ),
-    ).map(EventEntity::toDomain)
+    override fun save(event: NewEvent): Mono<Event> = eventR2dbcRepository.save(event.toEntity())
+        .map(EventEntity::toDomain)
 
-    override fun update(event: Event): Mono<Event> = eventR2dbcRepository.save(
-        EventEntity(
-            id = event.id.value,
-            title = event.title.value,
-            location = event.location.value,
-            startTime = event.schedule.startTime,
-            endTime = event.schedule.endTime,
-            timezone = event.schedule.timezone.id,
-            visibility = event.visibility,
-        ),
-    ).map(EventEntity::toDomain)
+    override fun update(event: Event): Mono<Event> = eventR2dbcRepository.save(event.toEntity())
+        .map(EventEntity::toDomain)
 
-    override fun deleteById(id: EventId): Mono<Void> = eventR2dbcRepository.deleteById(id.value)
+    override fun deleteById(id: EventId): Mono<Long> = eventR2dbcRepository.deleteById(id.value)
+        .thenReturn(1L)
 
     override fun existsById(id: EventId): Mono<Boolean> = eventR2dbcRepository.existsById(id.value)
 
@@ -77,6 +60,26 @@ private fun EventEntity.toDomain(): Event = Event(
         schedule = EventSchedule(startTime = startTime, endTime = endTime, timezone = EventTimezone.of(timezone)),
         visibility = visibility,
     ),
+)
+
+private fun NewEvent.toEntity(id: Long? = null): EventEntity = EventEntity(
+    id = id,
+    title = title.value,
+    location = location.value,
+    startTime = schedule.startTime,
+    endTime = schedule.endTime,
+    timezone = schedule.timezone.id,
+    visibility = visibility,
+)
+
+private fun Event.toEntity(): EventEntity = EventEntity(
+    id = id.value,
+    title = title.value,
+    location = location.value,
+    startTime = schedule.startTime,
+    endTime = schedule.endTime,
+    timezone = schedule.timezone.id,
+    visibility = visibility,
 )
 
 private fun ChatRoomEntity.toDomain(): ChatRoom = ChatRoom(
