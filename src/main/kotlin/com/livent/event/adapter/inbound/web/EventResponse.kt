@@ -24,9 +24,9 @@ data class ChatRoomResponse(
 )
 
 fun Event.toResponse(): EventResponse = EventResponse(
-    id = id,
-    title = title,
-    location = location,
+    id = id.value,
+    title = title.value,
+    location = location.value,
     startTime = schedule.startTime,
     endTime = schedule.endTime,
     timezone = schedule.timezone.id,
@@ -34,8 +34,8 @@ fun Event.toResponse(): EventResponse = EventResponse(
 )
 
 fun ChatRoom.toResponse(): ChatRoomResponse = ChatRoomResponse(
-    id = id,
-    eventId = eventId,
+    id = id.value,
+    eventId = eventId.value,
     type = type,
-    name = name,
+    name = name.value,
 )
