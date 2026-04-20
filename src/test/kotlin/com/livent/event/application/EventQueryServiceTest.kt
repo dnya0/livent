@@ -5,6 +5,7 @@ import com.livent.common.adapter.inbound.web.exception.InvalidRequestException
 import com.livent.event.domain.exception.EventNotFoundException
 import com.livent.event.domain.model.ChatRoom
 import com.livent.event.domain.model.Event
+import com.livent.event.domain.model.NewChatRoom
 import com.livent.event.domain.model.NewEvent
 import com.livent.event.domain.model.type.ChatRoomType
 import com.livent.event.domain.model.type.EventVisibility
@@ -229,5 +230,8 @@ class EventQueryServiceTest {
                     name = ChatRoomName.of("현장 채팅"),
                 ),
             )
+
+        override fun saveChatRoom(chatRoom: NewChatRoom): Mono<ChatRoom> =
+            Mono.just(chatRoom.persist(ChatRoomId.of(999L)))
     }
 }

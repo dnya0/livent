@@ -45,6 +45,14 @@ class EventController(
         eventCommandService.deleteEvent(eventId)
             .map { responseOf(it.toResponse()) }
 
+    @PostMapping("/{eventId}/chat-rooms")
+    fun createChatRoom(
+        @PathVariable eventId: Long,
+        @Valid @RequestBody request: ChatRoomCreateRequest,
+    ): Mono<ApiResponse<ChatRoomResponse>> =
+        eventCommandService.createChatRoom(eventId = eventId, command = request.toCreateCommand())
+            .map { responseOf(it.toResponse()) }
+
     @GetMapping
     fun getEvents(@Valid @ModelAttribute cursorRequest: CursorRequest): Mono<CursorApiResponse<EventResponse>> =
         eventQueryService.getEventSlice(cursor = cursorRequest.cursor, size = cursorRequest.size)

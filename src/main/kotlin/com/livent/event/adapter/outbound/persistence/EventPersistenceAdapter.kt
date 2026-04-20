@@ -6,6 +6,7 @@ import com.livent.event.adapter.outbound.persistence.repository.ChatRoomR2dbcRep
 import com.livent.event.adapter.outbound.persistence.repository.EventR2dbcRepository
 import com.livent.event.domain.model.ChatRoom
 import com.livent.event.domain.model.Event
+import com.livent.event.domain.model.NewChatRoom
 import com.livent.event.domain.model.NewEvent
 import com.livent.event.domain.model.value.ChatRoomId
 import com.livent.event.domain.model.value.ChatRoomName
@@ -50,6 +51,9 @@ class EventPersistenceAdapter(
 
     override fun findChatRoomsByEventId(eventId: EventId): Flux<ChatRoom> =
         chatRoomR2dbcRepository.findByEventIdOrderByTypeAsc(eventId.value).map(ChatRoomEntity::toDomain)
+
+    override fun saveChatRoom(chatRoom: NewChatRoom): Mono<ChatRoom> =
+        chatRoomR2dbcRepository.save(chatRoom.toEntity()).map(ChatRoomEntity::toDomain)
 }
 
 private fun EventEntity.toDomain(): Event = Event(
@@ -80,6 +84,13 @@ private fun Event.toEntity(): EventEntity = EventEntity(
     endTime = schedule.endTime,
     timezone = schedule.timezone.id,
     visibility = visibility,
+)
+
+private fun NewChatRoom.toEntity(id: Long? = null): ChatRoomEntity = ChatRoomEntity(
+    id = id,
+    eventId = eventId.value,
+    type = type,
+    name = name.value,
 )
 
 private fun ChatRoomEntity.toDomain(): ChatRoom = ChatRoom(
