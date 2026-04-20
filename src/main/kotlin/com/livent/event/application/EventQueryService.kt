@@ -4,7 +4,7 @@ import com.livent.common.adapter.inbound.web.exception.InvalidRequestException
 import com.livent.event.domain.exception.EventNotFoundException
 import com.livent.event.domain.model.ChatRoom
 import com.livent.event.domain.model.Event
-import com.livent.event.domain.model.value.EventId
+import com.livent.event.domain.value.EventId
 import com.livent.event.domain.repository.EventRepository
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux

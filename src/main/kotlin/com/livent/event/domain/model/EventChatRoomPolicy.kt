@@ -1,7 +1,7 @@
 package com.livent.event.domain.model
 
-import com.livent.event.domain.model.type.ChatRoomType
-import com.livent.event.domain.model.type.EventVisibility
+import com.livent.event.domain.type.ChatRoomType
+import com.livent.event.domain.type.EventVisibility
 
 object EventChatRoomPolicy {
     fun defaultChatRoomsFor(event: Event): List<NewChatRoom> = listOf(

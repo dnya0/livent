@@ -6,9 +6,9 @@ import com.livent.event.domain.model.Event
 import com.livent.event.domain.model.EventChatRoomPolicy
 import com.livent.event.domain.model.NewChatRoom
 import com.livent.event.domain.model.NewEvent
-import com.livent.event.domain.model.type.ChatRoomType
-import com.livent.event.domain.model.value.EventId
-import com.livent.event.domain.model.value.EventTimezone
+import com.livent.event.domain.type.ChatRoomType
+import com.livent.event.domain.value.EventId
+import com.livent.event.domain.value.EventTimezone
 import com.livent.event.domain.repository.EventRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional

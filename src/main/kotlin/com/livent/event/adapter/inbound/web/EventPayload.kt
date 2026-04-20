@@ -1,7 +1,7 @@
 package com.livent.event.adapter.inbound.web
 
 import java.time.Instant
-import com.livent.event.domain.model.type.EventVisibility
+import com.livent.event.domain.type.EventVisibility
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 

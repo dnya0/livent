@@ -4,7 +4,7 @@ import com.livent.event.domain.model.ChatRoom
 import com.livent.event.domain.model.Event
 import com.livent.event.domain.model.NewChatRoom
 import com.livent.event.domain.model.NewEvent
-import com.livent.event.domain.model.value.EventId
+import com.livent.event.domain.value.EventId
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 

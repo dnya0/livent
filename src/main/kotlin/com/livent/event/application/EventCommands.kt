@@ -1,8 +1,8 @@
 package com.livent.event.application
 
 import java.time.Instant
-import com.livent.event.domain.model.type.ChatRoomType
-import com.livent.event.domain.model.type.EventVisibility
+import com.livent.event.domain.type.ChatRoomType
+import com.livent.event.domain.type.EventVisibility
 
 data class CreateEventCommand(
     val title: String,

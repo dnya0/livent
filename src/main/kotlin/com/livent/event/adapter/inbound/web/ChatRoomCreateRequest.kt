@@ -1,7 +1,7 @@
 package com.livent.event.adapter.inbound.web
 
 import com.livent.event.application.CreateChatRoomCommand
-import com.livent.event.domain.model.type.ChatRoomType
+import com.livent.event.domain.type.ChatRoomType
 import jakarta.validation.constraints.NotNull
 
 data class ChatRoomCreateRequest(
