@@ -6,6 +6,7 @@ import com.livent.event.adapter.outbound.persistence.entity.EventEntity
 import com.livent.event.adapter.outbound.persistence.repository.ChatRoomR2dbcRepository
 import com.livent.event.adapter.outbound.persistence.repository.EventR2dbcRepository
 import com.livent.event.domain.exception.ChatRoomAlreadyExistsException
+import com.livent.event.domain.exception.EventNotFoundException
 import com.livent.event.domain.model.NewChatRoom
 import com.livent.event.domain.type.ChatRoomType
 import com.livent.event.domain.value.EventId
@@ -40,6 +41,33 @@ class EventPersistenceAdapterTest {
             ),
         )
             .expectError(ChatRoomAlreadyExistsException::class.java)
+            .verify()
+    }
+
+    @Test
+    fun `saveChatRoom maps foreign key violation to event not found`() {
+        val adapter = EventPersistenceAdapter(
+            eventR2dbcRepository = stubEventRepository(),
+            chatRoomR2dbcRepository = stubChatRoomRepository(
+                saveResult = Mono.error(
+                    R2dbcDataIntegrityViolationException(
+                        "referential integrity constraint violation: chat_rooms_event_id_fkey",
+                        "23503",
+                        0,
+                    ),
+                ),
+            ),
+        )
+
+        StepVerifier.create(
+            adapter.saveChatRoom(
+                NewChatRoom.create(
+                    eventId = EventId.of(1L),
+                    type = ChatRoomType.GLOBAL,
+                ),
+            ),
+        )
+            .expectError(EventNotFoundException::class.java)
             .verify()
     }
 

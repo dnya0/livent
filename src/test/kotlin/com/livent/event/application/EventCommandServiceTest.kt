@@ -22,7 +22,6 @@ import com.livent.event.domain.value.EventTitle
 import com.livent.event.domain.repository.EventRepository
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.springframework.dao.DataIntegrityViolationException
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.test.StepVerifier
@@ -279,11 +278,9 @@ class EventCommandServiceTest {
     }
 
     @Test
-    fun `createChatRoom maps unique constraint violation to conflict domain error`() {
+    fun `createChatRoom propagates repository conflict error`() {
         val repository = FakeEventRepository(
-            saveChatRoomError = DataIntegrityViolationException(
-                "duplicate key value violates unique constraint uk_chat_rooms_event_type (SQLSTATE 23505)",
-            ),
+            saveChatRoomError = ChatRoomAlreadyExistsException(),
         )
         val service = EventCommandService(repository)
 

@@ -5,6 +5,7 @@ import com.livent.event.adapter.outbound.persistence.entity.EventEntity
 import com.livent.event.adapter.outbound.persistence.repository.ChatRoomR2dbcRepository
 import com.livent.event.adapter.outbound.persistence.repository.EventR2dbcRepository
 import com.livent.event.domain.exception.ChatRoomAlreadyExistsException
+import com.livent.event.domain.exception.EventNotFoundException
 import com.livent.event.domain.model.ChatRoom
 import com.livent.event.domain.model.Event
 import com.livent.event.domain.model.NewChatRoom
@@ -59,6 +60,7 @@ class EventPersistenceAdapter(
     override fun saveChatRoom(chatRoom: NewChatRoom): Mono<ChatRoom> =
         chatRoomR2dbcRepository.save(chatRoom.toEntity())
             .onErrorMap(::isChatRoomTypeUniqueViolation) { ChatRoomAlreadyExistsException() }
+            .onErrorMap(::isChatRoomEventForeignKeyViolation) { EventNotFoundException() }
             .map(ChatRoomEntity::toDomain)
 }
 
@@ -78,6 +80,24 @@ private fun isChatRoomTypeUniqueViolation(ex: Throwable): Boolean {
         }
 
     return isIntegrityViolation && hasChatRoomUniqueConstraint
+}
+
+private fun isChatRoomEventForeignKeyViolation(ex: Throwable): Boolean {
+    val errors = generateSequence(ex) { it.cause }.toList()
+    val isIntegrityViolation = errors.any {
+        it is DataIntegrityViolationException ||
+            it is R2dbcDataIntegrityViolationException
+    }
+    val hasEventForeignKeySignal = errors
+        .mapNotNull(Throwable::message)
+        .any { message ->
+            message.contains("chat_rooms_event_id_fkey", ignoreCase = true) ||
+                message.contains("23503") ||
+                message.contains("23506") ||
+                message.contains("referential integrity constraint violation", ignoreCase = true)
+        }
+
+    return isIntegrityViolation && hasEventForeignKeySignal
 }
 
 private fun EventEntity.toDomain(): Event = Event(
