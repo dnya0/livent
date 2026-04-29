@@ -8,6 +8,7 @@ import com.livent.event.domain.model.ChatRoom
 import com.livent.event.domain.model.Event
 import com.livent.event.domain.model.NewChatRoom
 import com.livent.event.domain.model.NewEvent
+import com.livent.event.domain.repository.EventRepository
 import com.livent.event.domain.type.ChatRoomType
 import com.livent.event.domain.type.EventVisibility
 import com.livent.event.domain.value.ChatRoomId
@@ -15,7 +16,6 @@ import com.livent.event.domain.value.ChatRoomName
 import com.livent.event.domain.value.EventDetails
 import com.livent.event.domain.value.EventId
 import com.livent.event.domain.value.EventTimezone
-import com.livent.event.domain.repository.EventRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
@@ -42,6 +42,8 @@ class EventControllerTest {
 
     @Test
     fun `post events returns created event`() {
+        repository.resetChatRooms()
+
         webTestClient.post()
             .uri("/events")
             .contentType(MediaType.APPLICATION_JSON)
@@ -69,6 +71,7 @@ class EventControllerTest {
             .exchange()
             .expectStatus().isOk
             .expectBody()
+            .jsonPath("$.data.length()").isEqualTo(1)
             .jsonPath("$.data[0].type").isEqualTo("GLOBAL")
             .jsonPath("$.data[0].name").isEqualTo("전체 채팅")
     }
@@ -154,6 +157,15 @@ class EventControllerTest {
 
     @Test
     fun `post event chat rooms rejects duplicate type`() {
+        repository.seedChatRoom(
+            ChatRoom(
+                id = ChatRoomId.of(1L),
+                eventId = EventId.of(1L),
+                type = ChatRoomType.GLOBAL,
+                name = ChatRoomName.of("전체 채팅"),
+            ),
+        )
+
         webTestClient.post()
             .uri("/events/1/chat-rooms")
             .contentType(MediaType.APPLICATION_JSON)
@@ -180,15 +192,18 @@ class EventControllerTest {
                 visibility = EventVisibility.BOTH,
             ),
         )
-        private val chatRooms = mutableListOf(
-            ChatRoom(
-                id = ChatRoomId.of(1L),
-                eventId = EventId.of(1L),
-                type = ChatRoomType.GLOBAL,
-                name = ChatRoomName.of("전체 채팅"),
-            ),
-        )
-        private var nextChatRoomId = 2L
+        private val chatRooms = mutableListOf<ChatRoom>()
+        private var nextChatRoomId = 1L
+
+        fun resetChatRooms() {
+            chatRooms.clear()
+            nextChatRoomId = 1L
+        }
+
+        fun seedChatRoom(chatRoom: ChatRoom) {
+            chatRooms += chatRoom
+            nextChatRoomId = maxOf(nextChatRoomId, chatRoom.id.value + 1)
+        }
 
         override fun findFirstPage(limit: Int): Flux<Event> =
             event?.let { Flux.just(it).take(limit.toLong()) } ?: Flux.empty()
@@ -203,14 +218,6 @@ class EventControllerTest {
 
         override fun save(event: NewEvent): Mono<Event> {
             this.event = event.persist(EventId.of(1L))
-            if (chatRooms.none { it.eventId == EventId.of(1L) && it.type == ChatRoomType.GLOBAL }) {
-                chatRooms += ChatRoom(
-                    id = ChatRoomId.of(nextChatRoomId++),
-                    eventId = EventId.of(1L),
-                    type = ChatRoomType.GLOBAL,
-                    name = ChatRoomName.of("전체 채팅"),
-                )
-            }
             return Mono.just(requireNotNull(this.event))
         }
 
