@@ -3,6 +3,7 @@ package com.livent.event.application
 import java.time.Instant
 import kotlin.test.assertEquals
 import com.livent.common.adapter.inbound.web.exception.InvalidRequestException
+import com.livent.event.domain.exception.ChatRoomAlreadyExistsException
 import com.livent.event.domain.exception.EventNotFoundException
 import com.livent.event.domain.model.ChatRoom
 import com.livent.event.domain.model.Event
@@ -21,6 +22,7 @@ import com.livent.event.domain.value.EventTitle
 import com.livent.event.domain.repository.EventRepository
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.springframework.dao.DataIntegrityViolationException
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.test.StepVerifier
@@ -277,6 +279,25 @@ class EventCommandServiceTest {
     }
 
     @Test
+    fun `createChatRoom maps unique constraint violation to conflict domain error`() {
+        val repository = FakeEventRepository(
+            saveChatRoomError = DataIntegrityViolationException(
+                "duplicate key value violates unique constraint uk_chat_rooms_event_type (SQLSTATE 23505)",
+            ),
+        )
+        val service = EventCommandService(repository)
+
+        StepVerifier.create(
+            service.createChatRoom(
+                eventId = 1L,
+                command = CreateChatRoomCommand(type = ChatRoomType.GLOBAL),
+            ),
+        )
+            .expectError(ChatRoomAlreadyExistsException::class.java)
+            .verify()
+    }
+
+    @Test
     fun `createChatRoom rejects local room for online event`() {
         val repository = FakeEventRepository(
             existingEvent = Event(
@@ -319,6 +340,7 @@ class EventCommandServiceTest {
                 visibility = EventVisibility.BOTH,
             ),
         ),
+        private val saveChatRoomError: Throwable? = null,
     ) : EventRepository {
         private val chatRooms = mutableListOf<ChatRoom>()
         private var nextChatRoomId = 1L
@@ -346,6 +368,7 @@ class EventCommandServiceTest {
             Flux.fromIterable(chatRooms.filter { it.eventId == eventId })
 
         override fun saveChatRoom(chatRoom: NewChatRoom): Mono<ChatRoom> {
+            saveChatRoomError?.let { return Mono.error(it) }
             val persisted = chatRoom.persist(ChatRoomId.of(nextChatRoomId++))
             chatRooms += persisted
             return Mono.just(persisted)

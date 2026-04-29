@@ -1,6 +1,7 @@
 package com.livent.event.application
 
 import com.livent.common.adapter.inbound.web.exception.InvalidRequestException
+import com.livent.event.domain.exception.ChatRoomAlreadyExistsException
 import com.livent.event.domain.exception.EventNotFoundException
 import com.livent.event.domain.model.Event
 import com.livent.event.domain.model.EventChatRoomPolicy
@@ -10,6 +11,7 @@ import com.livent.event.domain.repository.EventRepository
 import com.livent.event.domain.type.ChatRoomType
 import com.livent.event.domain.value.EventId
 import com.livent.event.domain.value.EventTimezone
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
@@ -91,6 +93,7 @@ class EventCommandService(
                         name = command.name,
                     ),
                 )
+                    .onErrorMap(::isChatRoomTypeUniqueViolation) { ChatRoomAlreadyExistsException() }
             }
 
     private fun parseTimezone(timezone: String): EventTimezone = try {
@@ -119,6 +122,19 @@ class EventCommandService(
         } catch (ex: IllegalArgumentException) {
             throw InvalidRequestException(ex.message ?: "invalid chat room policy.", ex)
         }
+    }
+
+    private fun isChatRoomTypeUniqueViolation(ex: Throwable): Boolean {
+        if (ex !is DataIntegrityViolationException) {
+            return false
+        }
+
+        return generateSequence(ex as Throwable?) { it.cause }
+            .mapNotNull(Throwable::message)
+            .any { message ->
+                message.contains("uk_chat_rooms_event_type", ignoreCase = true) ||
+                    message.contains("23505")
+            }
     }
 }
 
