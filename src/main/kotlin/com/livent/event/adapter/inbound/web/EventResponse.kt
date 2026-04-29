@@ -4,8 +4,8 @@ import java.time.Instant
 import com.livent.event.application.DeleteEventResult
 import com.livent.event.domain.model.ChatRoom
 import com.livent.event.domain.model.Event
-import com.livent.event.domain.model.type.ChatRoomType
-import com.livent.event.domain.model.type.EventVisibility
+import com.livent.event.domain.type.ChatRoomType
+import com.livent.event.domain.type.EventVisibility
 
 data class EventResponse(
     val id: Long,

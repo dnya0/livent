@@ -1,7 +1,7 @@
 package com.livent.event.adapter.outbound.persistence.entity
 
 import java.time.Instant
-import com.livent.event.domain.model.type.EventVisibility
+import com.livent.event.domain.type.EventVisibility
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Table
 

@@ -6,15 +6,16 @@ import com.livent.event.application.EventCommandService
 import com.livent.event.application.EventQueryService
 import com.livent.event.domain.model.ChatRoom
 import com.livent.event.domain.model.Event
+import com.livent.event.domain.model.NewChatRoom
 import com.livent.event.domain.model.NewEvent
-import com.livent.event.domain.model.type.ChatRoomType
-import com.livent.event.domain.model.type.EventVisibility
-import com.livent.event.domain.model.value.ChatRoomId
-import com.livent.event.domain.model.value.ChatRoomName
-import com.livent.event.domain.model.value.EventDetails
-import com.livent.event.domain.model.value.EventId
-import com.livent.event.domain.model.value.EventTimezone
 import com.livent.event.domain.repository.EventRepository
+import com.livent.event.domain.type.ChatRoomType
+import com.livent.event.domain.type.EventVisibility
+import com.livent.event.domain.value.ChatRoomId
+import com.livent.event.domain.value.ChatRoomName
+import com.livent.event.domain.value.EventDetails
+import com.livent.event.domain.value.EventId
+import com.livent.event.domain.value.EventTimezone
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
@@ -41,6 +42,8 @@ class EventControllerTest {
 
     @Test
     fun `post events returns created event`() {
+        repository.resetChatRooms()
+
         webTestClient.post()
             .uri("/events")
             .contentType(MediaType.APPLICATION_JSON)
@@ -62,6 +65,15 @@ class EventControllerTest {
             .jsonPath("$.data.id").isEqualTo(1)
             .jsonPath("$.data.title").isEqualTo("Seoul Tech Meetup")
             .jsonPath("$.data.timezone").isEqualTo("Asia/Seoul")
+
+        webTestClient.get()
+            .uri("/events/1/chat-rooms")
+            .exchange()
+            .expectStatus().isOk
+            .expectBody()
+            .jsonPath("$.data.length()").isEqualTo(1)
+            .jsonPath("$.data[0].type").isEqualTo("GLOBAL")
+            .jsonPath("$.data[0].name").isEqualTo("전체 채팅")
     }
 
     @Test
@@ -122,6 +134,52 @@ class EventControllerTest {
             .expectStatus().isBadRequest
     }
 
+    @Test
+    fun `post event chat rooms returns created room`() {
+        webTestClient.post()
+            .uri("/events/1/chat-rooms")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(
+                """
+                {
+                  "type": "LOCAL",
+                  "name": "현장 참가자"
+                }
+                """.trimIndent(),
+            )
+            .exchange()
+            .expectStatus().isOk
+            .expectBody()
+            .jsonPath("$.data.eventId").isEqualTo(1)
+            .jsonPath("$.data.type").isEqualTo("LOCAL")
+            .jsonPath("$.data.name").isEqualTo("현장 참가자")
+    }
+
+    @Test
+    fun `post event chat rooms rejects duplicate type`() {
+        repository.seedChatRoom(
+            ChatRoom(
+                id = ChatRoomId.of(1L),
+                eventId = EventId.of(1L),
+                type = ChatRoomType.GLOBAL,
+                name = ChatRoomName.of("전체 채팅"),
+            ),
+        )
+
+        webTestClient.post()
+            .uri("/events/1/chat-rooms")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(
+                """
+                {
+                  "type": "GLOBAL"
+                }
+                """.trimIndent(),
+            )
+            .exchange()
+            .expectStatus().isBadRequest
+    }
+
     private class FakeEventRepository : EventRepository {
         private var event: Event? = Event(
             id = EventId.of(1L),
@@ -134,6 +192,18 @@ class EventControllerTest {
                 visibility = EventVisibility.BOTH,
             ),
         )
+        private val chatRooms = mutableListOf<ChatRoom>()
+        private var nextChatRoomId = 1L
+
+        fun resetChatRooms() {
+            chatRooms.clear()
+            nextChatRoomId = 1L
+        }
+
+        fun seedChatRoom(chatRoom: ChatRoom) {
+            chatRooms += chatRoom
+            nextChatRoomId = maxOf(nextChatRoomId, chatRoom.id.value + 1)
+        }
 
         override fun findFirstPage(limit: Int): Flux<Event> =
             event?.let { Flux.just(it).take(limit.toLong()) } ?: Flux.empty()
@@ -159,6 +229,7 @@ class EventControllerTest {
         override fun deleteById(id: EventId): Mono<Long> {
             if (event?.id == id) {
                 event = null
+                chatRooms.removeIf { it.eventId == id }
             }
             return Mono.just(1L)
         }
@@ -167,13 +238,12 @@ class EventControllerTest {
 
         override fun findChatRoomsByEventId(eventId: EventId): Flux<ChatRoom> =
             if (event?.id != eventId) Flux.empty()
-            else Flux.just(
-                ChatRoom(
-                    id = ChatRoomId.of(1L),
-                    eventId = eventId,
-                    type = ChatRoomType.GLOBAL,
-                    name = ChatRoomName.of("전체 채팅"),
-                ),
-            )
+            else Flux.fromIterable(chatRooms.filter { it.eventId == eventId })
+
+        override fun saveChatRoom(chatRoom: NewChatRoom): Mono<ChatRoom> {
+            val persisted = chatRoom.persist(ChatRoomId.of(nextChatRoomId++))
+            chatRooms += persisted
+            return Mono.just(persisted)
+        }
     }
 }

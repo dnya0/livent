@@ -1,4 +1,4 @@
-package com.livent.event.domain.model.value
+package com.livent.event.domain.value
 
 import java.time.DateTimeException
 import java.time.ZoneId

@@ -1,10 +1,10 @@
 package com.livent.event.domain.model
 
 import java.time.Instant
-import com.livent.event.domain.model.type.EventVisibility
-import com.livent.event.domain.model.value.EventDetails
-import com.livent.event.domain.model.value.EventId
-import com.livent.event.domain.model.value.EventTimezone
+import com.livent.event.domain.type.EventVisibility
+import com.livent.event.domain.value.EventDetails
+import com.livent.event.domain.value.EventId
+import com.livent.event.domain.value.EventTimezone
 
 data class Event(
     val id: EventId,

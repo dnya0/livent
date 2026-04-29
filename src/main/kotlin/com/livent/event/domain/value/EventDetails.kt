@@ -1,7 +1,7 @@
-package com.livent.event.domain.model.value
+package com.livent.event.domain.value
 
 import java.time.Instant
-import com.livent.event.domain.model.type.EventVisibility
+import com.livent.event.domain.type.EventVisibility
 
 data class EventDetails(
     val title: EventTitle,

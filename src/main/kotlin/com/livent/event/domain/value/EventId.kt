@@ -1,4 +1,4 @@
-package com.livent.event.domain.model.value
+package com.livent.event.domain.value
 
 @JvmInline
 value class EventId private constructor(

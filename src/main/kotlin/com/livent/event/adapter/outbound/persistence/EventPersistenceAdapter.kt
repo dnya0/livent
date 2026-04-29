@@ -4,18 +4,23 @@ import com.livent.event.adapter.outbound.persistence.entity.ChatRoomEntity
 import com.livent.event.adapter.outbound.persistence.entity.EventEntity
 import com.livent.event.adapter.outbound.persistence.repository.ChatRoomR2dbcRepository
 import com.livent.event.adapter.outbound.persistence.repository.EventR2dbcRepository
+import com.livent.event.domain.exception.ChatRoomAlreadyExistsException
 import com.livent.event.domain.model.ChatRoom
 import com.livent.event.domain.model.Event
+import com.livent.event.domain.model.NewChatRoom
 import com.livent.event.domain.model.NewEvent
-import com.livent.event.domain.model.value.ChatRoomId
-import com.livent.event.domain.model.value.ChatRoomName
-import com.livent.event.domain.model.value.EventDetails
-import com.livent.event.domain.model.value.EventId
-import com.livent.event.domain.model.value.EventLocation
-import com.livent.event.domain.model.value.EventSchedule
-import com.livent.event.domain.model.value.EventTimezone
-import com.livent.event.domain.model.value.EventTitle
 import com.livent.event.domain.repository.EventRepository
+import com.livent.event.domain.value.ChatRoomId
+import com.livent.event.domain.value.ChatRoomName
+import com.livent.event.domain.value.EventDetails
+import com.livent.event.domain.value.EventId
+import com.livent.event.domain.value.EventLocation
+import com.livent.event.domain.value.EventSchedule
+import com.livent.event.domain.value.EventTimezone
+import com.livent.event.domain.value.EventTitle
+import io.r2dbc.spi.R2dbcDataIntegrityViolationException
+import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.dao.DuplicateKeyException
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -50,6 +55,29 @@ class EventPersistenceAdapter(
 
     override fun findChatRoomsByEventId(eventId: EventId): Flux<ChatRoom> =
         chatRoomR2dbcRepository.findByEventIdOrderByTypeAsc(eventId.value).map(ChatRoomEntity::toDomain)
+
+    override fun saveChatRoom(chatRoom: NewChatRoom): Mono<ChatRoom> =
+        chatRoomR2dbcRepository.save(chatRoom.toEntity())
+            .onErrorMap(::isChatRoomTypeUniqueViolation) { ChatRoomAlreadyExistsException() }
+            .map(ChatRoomEntity::toDomain)
+}
+
+private fun isChatRoomTypeUniqueViolation(ex: Throwable): Boolean {
+    val errors = generateSequence(ex) { it.cause }.toList()
+    val isIntegrityViolation = errors.any {
+        it is DuplicateKeyException ||
+            it is DataIntegrityViolationException ||
+            it is R2dbcDataIntegrityViolationException
+    }
+    val hasChatRoomUniqueConstraint = errors
+        .mapNotNull(Throwable::message)
+        .any { message ->
+            message.contains("uk_chat_rooms_event_type", ignoreCase = true) ||
+                message.contains("duplicate key", ignoreCase = true) ||
+                message.contains("23505")
+        }
+
+    return isIntegrityViolation && hasChatRoomUniqueConstraint
 }
 
 private fun EventEntity.toDomain(): Event = Event(
@@ -80,6 +108,13 @@ private fun Event.toEntity(): EventEntity = EventEntity(
     endTime = schedule.endTime,
     timezone = schedule.timezone.id,
     visibility = visibility,
+)
+
+private fun NewChatRoom.toEntity(id: Long? = null): ChatRoomEntity = ChatRoomEntity(
+    id = id,
+    eventId = eventId.value,
+    type = type,
+    name = name.value,
 )
 
 private fun ChatRoomEntity.toDomain(): ChatRoom = ChatRoom(

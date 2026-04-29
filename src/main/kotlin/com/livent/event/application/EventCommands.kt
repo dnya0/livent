@@ -1,7 +1,8 @@
 package com.livent.event.application
 
 import java.time.Instant
-import com.livent.event.domain.model.type.EventVisibility
+import com.livent.event.domain.type.ChatRoomType
+import com.livent.event.domain.type.EventVisibility
 
 data class CreateEventCommand(
     val title: String,
@@ -19,4 +20,9 @@ data class UpdateEventCommand(
     val endTime: Instant,
     val timezone: String,
     val visibility: EventVisibility,
+)
+
+data class CreateChatRoomCommand(
+    val type: ChatRoomType,
+    val name: String? = null,
 )

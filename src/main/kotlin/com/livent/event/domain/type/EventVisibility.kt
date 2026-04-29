@@ -1,4 +1,4 @@
-package com.livent.event.domain.model.type
+package com.livent.event.domain.type
 
 enum class EventVisibility {
     ONSITE,

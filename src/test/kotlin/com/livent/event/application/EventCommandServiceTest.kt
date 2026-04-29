@@ -3,20 +3,26 @@ package com.livent.event.application
 import java.time.Instant
 import kotlin.test.assertEquals
 import com.livent.common.adapter.inbound.web.exception.InvalidRequestException
+import com.livent.event.domain.exception.ChatRoomAlreadyExistsException
 import com.livent.event.domain.exception.EventNotFoundException
 import com.livent.event.domain.model.ChatRoom
 import com.livent.event.domain.model.Event
+import com.livent.event.domain.model.NewChatRoom
 import com.livent.event.domain.model.NewEvent
-import com.livent.event.domain.model.type.EventVisibility
-import com.livent.event.domain.model.value.EventDetails
-import com.livent.event.domain.model.value.EventId
-import com.livent.event.domain.model.value.EventLocation
-import com.livent.event.domain.model.value.EventSchedule
-import com.livent.event.domain.model.value.EventTimezone
-import com.livent.event.domain.model.value.EventTitle
+import com.livent.event.domain.type.ChatRoomType
+import com.livent.event.domain.type.EventVisibility
+import com.livent.event.domain.value.ChatRoomId
+import com.livent.event.domain.value.ChatRoomName
+import com.livent.event.domain.value.EventDetails
+import com.livent.event.domain.value.EventId
+import com.livent.event.domain.value.EventLocation
+import com.livent.event.domain.value.EventSchedule
+import com.livent.event.domain.value.EventTimezone
+import com.livent.event.domain.value.EventTitle
 import com.livent.event.domain.repository.EventRepository
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.springframework.dao.DataIntegrityViolationException
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.test.StepVerifier
@@ -47,6 +53,8 @@ class EventCommandServiceTest {
                     event.visibility == EventVisibility.BOTH
             }
             .verifyComplete()
+
+        assertEquals(listOf(ChatRoomType.GLOBAL), repository.chatRoomsFor(1L).map(ChatRoom::type))
     }
 
     @Test
@@ -226,8 +234,100 @@ class EventCommandServiceTest {
             .verify()
     }
 
-    private class FakeEventRepository : EventRepository {
-        private val existingEvent = Event(
+    @Test
+    fun `createChatRoom creates room when type is allowed and unique`() {
+        val repository = FakeEventRepository()
+        val service = EventCommandService(repository)
+
+        StepVerifier.create(
+            service.createChatRoom(
+                eventId = 1L,
+                command = CreateChatRoomCommand(
+                    type = ChatRoomType.LOCAL,
+                    name = "  현장 참가자  ",
+                ),
+            ),
+        )
+            .expectNextMatches { chatRoom ->
+                chatRoom.eventId == EventId.of(1L) &&
+                    chatRoom.type == ChatRoomType.LOCAL &&
+                    chatRoom.name == ChatRoomName.of("현장 참가자")
+            }
+            .verifyComplete()
+    }
+
+    @Test
+    fun `createChatRoom rejects duplicate type`() {
+        val repository = FakeEventRepository().apply {
+            saveChatRoom(
+                NewChatRoom.create(
+                    eventId = EventId.of(1L),
+                    type = ChatRoomType.GLOBAL,
+                ),
+            ).block()
+        }
+        val service = EventCommandService(repository)
+
+        StepVerifier.create(
+            service.createChatRoom(
+                eventId = 1L,
+                command = CreateChatRoomCommand(type = ChatRoomType.GLOBAL),
+            ),
+        )
+            .expectError(InvalidRequestException::class.java)
+            .verify()
+    }
+
+    @Test
+    fun `createChatRoom maps unique constraint violation to conflict domain error`() {
+        val repository = FakeEventRepository(
+            saveChatRoomError = DataIntegrityViolationException(
+                "duplicate key value violates unique constraint uk_chat_rooms_event_type (SQLSTATE 23505)",
+            ),
+        )
+        val service = EventCommandService(repository)
+
+        StepVerifier.create(
+            service.createChatRoom(
+                eventId = 1L,
+                command = CreateChatRoomCommand(type = ChatRoomType.GLOBAL),
+            ),
+        )
+            .expectError(ChatRoomAlreadyExistsException::class.java)
+            .verify()
+    }
+
+    @Test
+    fun `createChatRoom rejects local room for online event`() {
+        val repository = FakeEventRepository(
+            existingEvent = Event(
+                id = EventId.of(1L),
+                details = EventDetails(
+                    title = EventTitle.of("Online Summit"),
+                    location = EventLocation.of("Zoom"),
+                    schedule = EventSchedule(
+                        startTime = Instant.parse("2026-04-20T10:00:00Z"),
+                        endTime = Instant.parse("2026-04-20T12:00:00Z"),
+                        timezone = EventTimezone.of("Asia/Seoul"),
+                    ),
+                    visibility = EventVisibility.ONLINE,
+                ),
+            ),
+        )
+        val service = EventCommandService(repository)
+
+        StepVerifier.create(
+            service.createChatRoom(
+                eventId = 1L,
+                command = CreateChatRoomCommand(type = ChatRoomType.LOCAL),
+            ),
+        )
+            .expectError(InvalidRequestException::class.java)
+            .verify()
+    }
+
+    private class FakeEventRepository(
+        private val existingEvent: Event = Event(
             id = EventId.of(1L),
             details = EventDetails(
                 title = EventTitle.of("Seoul Tech Meetup"),
@@ -239,7 +339,13 @@ class EventCommandServiceTest {
                 ),
                 visibility = EventVisibility.BOTH,
             ),
-        )
+        ),
+        private val saveChatRoomError: Throwable? = null,
+    ) : EventRepository {
+        private val chatRooms = mutableListOf<ChatRoom>()
+        private var nextChatRoomId = 1L
+
+        fun chatRoomsFor(eventId: Long): List<ChatRoom> = chatRooms.filter { it.eventId == EventId.of(eventId) }
 
         override fun findFirstPage(limit: Int): Flux<Event> = Flux.empty()
 
@@ -258,6 +364,14 @@ class EventCommandServiceTest {
 
         override fun existsById(id: EventId): Mono<Boolean> = Mono.just(existingEvent.id == id)
 
-        override fun findChatRoomsByEventId(eventId: EventId): Flux<ChatRoom> = Flux.empty()
+        override fun findChatRoomsByEventId(eventId: EventId): Flux<ChatRoom> =
+            Flux.fromIterable(chatRooms.filter { it.eventId == eventId })
+
+        override fun saveChatRoom(chatRoom: NewChatRoom): Mono<ChatRoom> {
+            saveChatRoomError?.let { return Mono.error(it) }
+            val persisted = chatRoom.persist(ChatRoomId.of(nextChatRoomId++))
+            chatRooms += persisted
+            return Mono.just(persisted)
+        }
     }
 }
