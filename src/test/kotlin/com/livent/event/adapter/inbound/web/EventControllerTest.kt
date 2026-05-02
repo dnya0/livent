@@ -71,9 +71,11 @@ class EventControllerTest {
             .exchange()
             .expectStatus().isOk
             .expectBody()
-            .jsonPath("$.data.length()").isEqualTo(1)
+            .jsonPath("$.data.length()").isEqualTo(2)
             .jsonPath("$.data[0].type").isEqualTo("GLOBAL")
             .jsonPath("$.data[0].name").isEqualTo("전체 채팅")
+            .jsonPath("$.data[1].type").isEqualTo("LOCAL")
+            .jsonPath("$.data[1].name").isEqualTo("현장 채팅")
     }
 
     @Test

@@ -4,12 +4,12 @@ import com.livent.event.domain.type.ChatRoomType
 import com.livent.event.domain.type.EventVisibility
 
 object EventChatRoomPolicy {
-    fun defaultChatRoomsFor(event: Event): List<NewChatRoom> = listOf(
+    fun defaultChatRoomsFor(event: Event): List<NewChatRoom> = defaultTypesFor(event.visibility).map { type ->
         NewChatRoom.create(
             eventId = event.id,
-            type = ChatRoomType.GLOBAL,
-        ),
-    )
+            type = type,
+        )
+    }
 
     fun validateCreatable(
         event: Event,
@@ -30,5 +30,11 @@ object EventChatRoomPolicy {
             -> setOf(ChatRoomType.GLOBAL, ChatRoomType.LOCAL, ChatRoomType.SESSION)
 
         EventVisibility.ONLINE -> setOf(ChatRoomType.GLOBAL, ChatRoomType.SESSION)
+    }
+
+    private fun defaultTypesFor(visibility: EventVisibility): List<ChatRoomType> = when (visibility) {
+        EventVisibility.ONSITE -> listOf(ChatRoomType.LOCAL)
+        EventVisibility.ONLINE -> listOf(ChatRoomType.GLOBAL)
+        EventVisibility.BOTH -> listOf(ChatRoomType.GLOBAL, ChatRoomType.LOCAL)
     }
 }

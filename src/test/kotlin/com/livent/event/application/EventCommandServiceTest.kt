@@ -9,6 +9,7 @@ import com.livent.event.domain.model.ChatRoom
 import com.livent.event.domain.model.Event
 import com.livent.event.domain.model.NewChatRoom
 import com.livent.event.domain.model.NewEvent
+import com.livent.event.domain.repository.EventRepository
 import com.livent.event.domain.type.ChatRoomType
 import com.livent.event.domain.type.EventVisibility
 import com.livent.event.domain.value.ChatRoomId
@@ -19,7 +20,6 @@ import com.livent.event.domain.value.EventLocation
 import com.livent.event.domain.value.EventSchedule
 import com.livent.event.domain.value.EventTimezone
 import com.livent.event.domain.value.EventTitle
-import com.livent.event.domain.repository.EventRepository
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import reactor.core.publisher.Flux
@@ -53,7 +53,53 @@ class EventCommandServiceTest {
             }
             .verifyComplete()
 
+        assertEquals(listOf(ChatRoomType.GLOBAL, ChatRoomType.LOCAL), repository.chatRoomsFor(1L).map(ChatRoom::type))
+    }
+
+    @Test
+    fun `createEvent creates global chat room for online event`() {
+        val repository = FakeEventRepository()
+        val service = EventCommandService(repository)
+
+        StepVerifier.create(
+            service.createEvent(
+                CreateEventCommand(
+                    title = "Online Summit",
+                    location = "Zoom",
+                    startTime = Instant.parse("2026-04-20T10:00:00Z"),
+                    endTime = Instant.parse("2026-04-20T12:00:00Z"),
+                    timezone = "Asia/Seoul",
+                    visibility = EventVisibility.ONLINE,
+                ),
+            ),
+        )
+            .expectNextCount(1)
+            .verifyComplete()
+
         assertEquals(listOf(ChatRoomType.GLOBAL), repository.chatRoomsFor(1L).map(ChatRoom::type))
+    }
+
+    @Test
+    fun `createEvent creates local chat room for onsite event`() {
+        val repository = FakeEventRepository()
+        val service = EventCommandService(repository)
+
+        StepVerifier.create(
+            service.createEvent(
+                CreateEventCommand(
+                    title = "Hall Meetup",
+                    location = "COEX",
+                    startTime = Instant.parse("2026-04-20T10:00:00Z"),
+                    endTime = Instant.parse("2026-04-20T12:00:00Z"),
+                    timezone = "Asia/Seoul",
+                    visibility = EventVisibility.ONSITE,
+                ),
+            ),
+        )
+            .expectNextCount(1)
+            .verifyComplete()
+
+        assertEquals(listOf(ChatRoomType.LOCAL), repository.chatRoomsFor(1L).map(ChatRoom::type))
     }
 
     @Test
