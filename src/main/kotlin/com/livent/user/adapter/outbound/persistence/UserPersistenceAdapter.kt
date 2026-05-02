@@ -1,0 +1,32 @@
+package com.livent.user.adapter.outbound.persistence
+
+import com.livent.user.adapter.outbound.persistence.entity.UserEntity
+import com.livent.user.adapter.outbound.persistence.repository.UserR2dbcRepository
+import com.livent.user.domain.model.NewUser
+import com.livent.user.domain.model.User
+import com.livent.user.domain.repository.UserRepository
+import com.livent.user.domain.value.UserId
+import com.livent.user.domain.value.UserNickname
+import org.springframework.stereotype.Component
+import reactor.core.publisher.Mono
+
+@Component
+class UserPersistenceAdapter(
+    private val userR2dbcRepository: UserR2dbcRepository,
+) : UserRepository {
+    override fun findById(id: UserId): Mono<User> = userR2dbcRepository.findById(id.value)
+        .map(UserEntity::toDomain)
+
+    override fun save(user: NewUser): Mono<User> = userR2dbcRepository.save(user.toEntity())
+        .map(UserEntity::toDomain)
+}
+
+private fun UserEntity.toDomain(): User = User(
+    id = UserId.of(requireNotNull(id) { "User id must not be null when reading (nickname='$nickname')." }),
+    nickname = UserNickname.of(nickname),
+)
+
+private fun NewUser.toEntity(id: Long? = null): UserEntity = UserEntity(
+    id = id,
+    nickname = nickname.value,
+)
