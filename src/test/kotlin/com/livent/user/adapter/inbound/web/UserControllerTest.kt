@@ -86,6 +86,8 @@ class UserControllerTest {
         override fun findById(id: UserId): Mono<User> =
             user.takeIf { it.id == id }?.let { Mono.just(it) } ?: Mono.empty()
 
+        override fun existsById(id: UserId): Mono<Boolean> = Mono.just(user.id == id)
+
         override fun save(user: NewUser): Mono<User> {
             this.user = user.persist(UserId.of(1L))
             return Mono.just(this.user)
