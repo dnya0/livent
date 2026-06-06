@@ -1,15 +1,19 @@
 package com.livent.participation.adapter.outbound.persistence
 
-import java.nio.file.Files
+import java.nio.file.Path
 import java.sql.DriverManager
-import java.util.UUID
 import org.flywaydb.core.Flyway
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 
 class ParticipationSchemaMigrationTest {
+
+    @TempDir
+    lateinit var tempDir: Path
+
     @Test
     fun `participation schema migration creates participations table`() {
-        val databasePath = Files.createTempDirectory("livent-participation-schema-${UUID.randomUUID()}").resolve("db")
+        val databasePath = tempDir.resolve("db")
         val jdbcUrl =
             "jdbc:h2:file:${databasePath.toAbsolutePath()};MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
 
