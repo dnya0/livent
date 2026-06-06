@@ -50,6 +50,8 @@ class UserCommandServiceTest {
 
         override fun findById(id: UserId): Mono<User> = Mono.empty()
 
+        override fun existsById(id: UserId): Mono<Boolean> = Mono.just(false)
+
         override fun save(user: NewUser): Mono<User> {
             savedNickname = user.nickname.value
             return Mono.just(user.persist(UserId.of(1L)))

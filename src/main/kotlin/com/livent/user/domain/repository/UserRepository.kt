@@ -8,5 +8,7 @@ import reactor.core.publisher.Mono
 interface UserRepository {
     fun findById(id: UserId): Mono<User>
 
+    fun existsById(id: UserId): Mono<Boolean>
+
     fun save(user: NewUser): Mono<User>
 }

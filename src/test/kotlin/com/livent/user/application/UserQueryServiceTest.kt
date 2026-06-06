@@ -53,6 +53,9 @@ class UserQueryServiceTest {
         override fun findById(id: UserId): Mono<User> =
             user?.takeIf { it.id == id }?.let { Mono.just(it) } ?: Mono.empty()
 
+        override fun existsById(id: UserId): Mono<Boolean> =
+            Mono.just(user?.id == id)
+
         override fun save(user: NewUser): Mono<User> = Mono.just(user.persist(UserId.of(1L)))
     }
 }

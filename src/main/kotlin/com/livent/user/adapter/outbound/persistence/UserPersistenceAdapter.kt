@@ -17,6 +17,8 @@ class UserPersistenceAdapter(
     override fun findById(id: UserId): Mono<User> = userR2dbcRepository.findById(id.value)
         .map(UserEntity::toDomain)
 
+    override fun existsById(id: UserId): Mono<Boolean> = userR2dbcRepository.existsById(id.value)
+
     override fun save(user: NewUser): Mono<User> = userR2dbcRepository.save(user.toEntity())
         .map(UserEntity::toDomain)
 }
