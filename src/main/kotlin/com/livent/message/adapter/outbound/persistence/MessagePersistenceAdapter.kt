@@ -17,8 +17,12 @@ import reactor.core.publisher.Mono
 class MessagePersistenceAdapter(
     private val messageR2dbcRepository: MessageR2dbcRepository,
 ) : MessageRepository {
-    override fun findByChatRoomId(chatRoomId: ChatRoomId): Flux<Message> =
-        messageR2dbcRepository.findByChatRoomIdOrderByIdAsc(chatRoomId.value)
+    override fun findFirstPageByChatRoomId(chatRoomId: ChatRoomId, limit: Int): Flux<Message> =
+        messageR2dbcRepository.findFirstPageByChatRoomId(chatRoomId.value, limit)
+            .map(MessageEntity::toDomain)
+
+    override fun findAfterIdByChatRoomId(chatRoomId: ChatRoomId, cursor: MessageId, limit: Int): Flux<Message> =
+        messageR2dbcRepository.findAfterIdByChatRoomId(chatRoomId.value, cursor.value, limit)
             .map(MessageEntity::toDomain)
 
     override fun save(message: NewMessage): Mono<Message> =

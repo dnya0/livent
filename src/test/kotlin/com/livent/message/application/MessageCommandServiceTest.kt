@@ -43,12 +43,12 @@ class MessageCommandServiceTest {
         StepVerifier.create(
             service.sendMessage(
                 chatRoomId = 1L,
-                command = SendMessageCommand(senderId = 1L, content = " hello "),
+                command = SendMessageCommand(senderId = java.util.UUID.fromString("00000000-0000-0000-0000-000000000001"), content = " hello "),
             ),
         )
             .expectNextMatches { message ->
                 message.chatRoomId == ChatRoomId.of(1L) &&
-                    message.senderId == UserId.of(1L) &&
+                    message.senderId == UserId.of(java.util.UUID.fromString("00000000-0000-0000-0000-000000000001")) &&
                     message.content.value == "hello"
             }
             .verifyComplete()
@@ -62,7 +62,7 @@ class MessageCommandServiceTest {
             participationRepository = FakeParticipationRepository(participation()),
         )
 
-        StepVerifier.create(service.sendMessage(999L, SendMessageCommand(senderId = 1L, content = "hello")))
+        StepVerifier.create(service.sendMessage(999L, SendMessageCommand(senderId = java.util.UUID.fromString("00000000-0000-0000-0000-000000000001"), content = "hello")))
             .expectError(ChatRoomNotFoundException::class.java)
             .verify()
     }
@@ -75,7 +75,7 @@ class MessageCommandServiceTest {
             participationRepository = FakeParticipationRepository(participation = null),
         )
 
-        StepVerifier.create(service.sendMessage(1L, SendMessageCommand(senderId = 1L, content = "hello")))
+        StepVerifier.create(service.sendMessage(1L, SendMessageCommand(senderId = java.util.UUID.fromString("00000000-0000-0000-0000-000000000001"), content = "hello")))
             .expectError(ParticipationNotFoundException::class.java)
             .verify()
     }
@@ -88,7 +88,7 @@ class MessageCommandServiceTest {
             participationRepository = FakeParticipationRepository(participation(status = ParticipationStatus.ONLINE)),
         )
 
-        StepVerifier.create(service.sendMessage(2L, SendMessageCommand(senderId = 1L, content = "hello")))
+        StepVerifier.create(service.sendMessage(2L, SendMessageCommand(senderId = java.util.UUID.fromString("00000000-0000-0000-0000-000000000001"), content = "hello")))
             .expectError(ChatRoomAccessDeniedException::class.java)
             .verify()
     }
@@ -101,7 +101,7 @@ class MessageCommandServiceTest {
             participationRepository = FakeParticipationRepository(participation(status = ParticipationStatus.ONSITE)),
         )
 
-        StepVerifier.create(service.sendMessage(2L, SendMessageCommand(senderId = 1L, content = "hello")))
+        StepVerifier.create(service.sendMessage(2L, SendMessageCommand(senderId = java.util.UUID.fromString("00000000-0000-0000-0000-000000000001"), content = "hello")))
             .expectNextMatches { it.chatRoomId == ChatRoomId.of(2L) }
             .verifyComplete()
     }
@@ -117,7 +117,7 @@ class MessageCommandServiceTest {
         )
 
         assertThrows<InvalidRequestException> {
-            service.sendMessage(1L, SendMessageCommand(senderId = 1L, content = " "))
+            service.sendMessage(1L, SendMessageCommand(senderId = java.util.UUID.fromString("00000000-0000-0000-0000-000000000001"), content = " "))
         }
 
         assert(!eventRepository.wasCalled)
@@ -125,7 +125,10 @@ class MessageCommandServiceTest {
     }
 
     private class FakeMessageRepository : MessageRepository {
-        override fun findByChatRoomId(chatRoomId: ChatRoomId): Flux<Message> = Flux.empty()
+        override fun findFirstPageByChatRoomId(chatRoomId: ChatRoomId, limit: Int): Flux<Message> = Flux.empty()
+
+        override fun findAfterIdByChatRoomId(chatRoomId: ChatRoomId, cursor: MessageId, limit: Int): Flux<Message> =
+            Flux.empty()
 
         override fun save(message: NewMessage): Mono<Message> =
             Mono.just(message.persist(MessageId.of(1L)))
@@ -192,7 +195,7 @@ class MessageCommandServiceTest {
 
     private fun participation(status: ParticipationStatus = ParticipationStatus.ONLINE): Participation = Participation(
         id = ParticipationId.of(1L),
-        userId = UserId.of(1L),
+        userId = UserId.of(java.util.UUID.fromString("00000000-0000-0000-0000-000000000001")),
         eventId = EventId.of(1L),
         status = status,
         joinedAt = Instant.parse("2026-05-12T00:00:00Z"),

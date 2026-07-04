@@ -1,5 +1,6 @@
 package com.livent.user.adapter.inbound.web
 
+import java.util.UUID
 import com.livent.user.application.UserCommandService
 import com.livent.user.application.UserQueryService
 import com.project.common.core.presentation.response.ApiResponse
@@ -25,7 +26,7 @@ class UserController(
             .map { responseOf(it.toResponse()) }
 
     @GetMapping("/{userId}")
-    fun getUser(@PathVariable userId: Long): Mono<ApiResponse<UserResponse>> =
+    fun getUser(@PathVariable userId: UUID): Mono<ApiResponse<UserResponse>> =
         userQueryService.getUser(userId)
             .map { responseOf(it.toResponse()) }
 }

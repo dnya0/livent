@@ -33,14 +33,36 @@ class MessageQueryServiceTest {
     @Test
     fun `getMessages returns chat room messages for participant`() {
         val service = MessageQueryService(
-            messageRepository = FakeMessageRepository(listOf(message(id = 1L), message(id = 2L))),
+            messageRepository = FakeMessageRepository(listOf(message(id = 1L), message(id = 2L), message(id = 3L))),
             eventRepository = FakeEventRepository(chatRoom()),
             participationRepository = FakeParticipationRepository(participation()),
         )
 
-        StepVerifier.create(service.getMessages(chatRoomId = 1L, userId = 1L))
-            .expectNextMatches { it.id == MessageId.of(1L) }
-            .expectNextMatches { it.id == MessageId.of(2L) }
+        StepVerifier.create(service.getMessageSlice(chatRoomId = 1L, userId = java.util.UUID.fromString("00000000-0000-0000-0000-000000000001"), cursor = null, size = 2))
+            .expectNextMatches { slice ->
+                slice.items.map { it.id } == listOf(MessageId.of(1L), MessageId.of(2L)) &&
+                    slice.size == 2 &&
+                    slice.hasNext &&
+                    slice.nextCursor == "2"
+            }
+            .verifyComplete()
+    }
+
+    @Test
+    fun `getMessages returns messages after cursor`() {
+        val service = MessageQueryService(
+            messageRepository = FakeMessageRepository(listOf(message(id = 1L), message(id = 2L), message(id = 3L))),
+            eventRepository = FakeEventRepository(chatRoom()),
+            participationRepository = FakeParticipationRepository(participation()),
+        )
+
+        StepVerifier.create(service.getMessageSlice(chatRoomId = 1L, userId = java.util.UUID.fromString("00000000-0000-0000-0000-000000000001"), cursor = "1", size = 2))
+            .expectNextMatches { slice ->
+                slice.items.map { it.id } == listOf(MessageId.of(2L), MessageId.of(3L)) &&
+                    slice.size == 2 &&
+                    !slice.hasNext &&
+                    slice.nextCursor == null
+            }
             .verifyComplete()
     }
 
@@ -52,7 +74,7 @@ class MessageQueryServiceTest {
             participationRepository = FakeParticipationRepository(participation = null),
         )
 
-        StepVerifier.create(service.getMessages(chatRoomId = 1L, userId = 1L))
+        StepVerifier.create(service.getMessageSlice(chatRoomId = 1L, userId = java.util.UUID.fromString("00000000-0000-0000-0000-000000000001"), cursor = null, size = 20))
             .expectError(ParticipationNotFoundException::class.java)
             .verify()
     }
@@ -65,7 +87,7 @@ class MessageQueryServiceTest {
             participationRepository = FakeParticipationRepository(participation(status = ParticipationStatus.ONLINE)),
         )
 
-        StepVerifier.create(service.getMessages(chatRoomId = 2L, userId = 1L))
+        StepVerifier.create(service.getMessageSlice(chatRoomId = 2L, userId = java.util.UUID.fromString("00000000-0000-0000-0000-000000000001"), cursor = null, size = 20))
             .expectError(ChatRoomAccessDeniedException::class.java)
             .verify()
     }
@@ -73,8 +95,21 @@ class MessageQueryServiceTest {
     private class FakeMessageRepository(
         private val messages: List<Message>,
     ) : MessageRepository {
-        override fun findByChatRoomId(chatRoomId: ChatRoomId): Flux<Message> =
-            Flux.fromIterable(messages.filter { it.chatRoomId == chatRoomId })
+        override fun findFirstPageByChatRoomId(chatRoomId: ChatRoomId, limit: Int): Flux<Message> =
+            Flux.fromIterable(
+                messages
+                    .filter { it.chatRoomId == chatRoomId }
+                    .sortedBy { it.id.value }
+                    .take(limit),
+            )
+
+        override fun findAfterIdByChatRoomId(chatRoomId: ChatRoomId, cursor: MessageId, limit: Int): Flux<Message> =
+            Flux.fromIterable(
+                messages
+                    .filter { it.chatRoomId == chatRoomId && it.id.value > cursor.value }
+                    .sortedBy { it.id.value }
+                    .take(limit),
+            )
 
         override fun save(message: NewMessage): Mono<Message> = Mono.just(message.persist(MessageId.of(999L)))
     }
@@ -128,7 +163,7 @@ class MessageQueryServiceTest {
 
     private fun participation(status: ParticipationStatus = ParticipationStatus.ONLINE): Participation = Participation(
         id = ParticipationId.of(1L),
-        userId = UserId.of(1L),
+        userId = UserId.of(java.util.UUID.fromString("00000000-0000-0000-0000-000000000001")),
         eventId = EventId.of(1L),
         status = status,
         joinedAt = Instant.parse("2026-05-12T00:00:00Z"),
@@ -140,7 +175,7 @@ class MessageQueryServiceTest {
     ): Message = Message(
         id = MessageId.of(id),
         chatRoomId = ChatRoomId.of(chatRoomId),
-        senderId = UserId.of(1L),
+        senderId = UserId.of(java.util.UUID.fromString("00000000-0000-0000-0000-000000000001")),
         content = MessageContent.of("hello $id"),
         type = MessageType.TEXT,
         createdAt = Instant.parse("2026-05-12T00:00:00Z").plusSeconds(id),

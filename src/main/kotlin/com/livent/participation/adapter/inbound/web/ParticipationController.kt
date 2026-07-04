@@ -1,5 +1,6 @@
 package com.livent.participation.adapter.inbound.web
 
+import java.util.UUID
 import com.livent.participation.application.ParticipationCommandService
 import com.livent.participation.application.ParticipationQueryService
 import com.project.common.core.presentation.response.ApiResponse
@@ -30,7 +31,7 @@ class ParticipationController(
     @GetMapping("/{userId}")
     fun getParticipation(
         @PathVariable eventId: Long,
-        @PathVariable userId: Long,
+        @PathVariable userId: UUID,
     ): Mono<ApiResponse<ParticipationResponse>> =
         participationQueryService.getParticipation(eventId = eventId, userId = userId)
             .map { responseOf(it.toResponse()) }

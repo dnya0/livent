@@ -23,7 +23,7 @@ class MessageCommandService(
 ) {
     fun sendMessage(chatRoomId: Long, command: SendMessageCommand): Mono<Message> {
         val resolvedChatRoomId = resolveChatRoomId(chatRoomId)
-        val resolvedSenderId = resolveUserId(command.senderId, "senderId")
+        val resolvedSenderId = UserId.of(command.senderId)
         val newMessage = createTextMessage(
             chatRoomId = resolvedChatRoomId,
             senderId = resolvedSenderId,
@@ -61,10 +61,4 @@ internal fun resolveChatRoomId(chatRoomId: Long): ChatRoomId = invalidRequestCat
     message = "chatRoomId must be a positive number.",
 ) {
     ChatRoomId.of(chatRoomId)
-}
-
-internal fun resolveUserId(userId: Long, fieldName: String = "userId"): UserId = invalidRequestCatch(
-    message = "$fieldName must be a positive number.",
-) {
-    UserId.of(userId)
 }

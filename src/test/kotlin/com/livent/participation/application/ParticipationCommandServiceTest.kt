@@ -48,13 +48,13 @@ class ParticipationCommandServiceTest {
         StepVerifier.create(
             service.createParticipation(
                 eventId = 1L,
-                command = CreateParticipationCommand(userId = 1L),
+                command = CreateParticipationCommand(userId = java.util.UUID.fromString("00000000-0000-0000-0000-000000000001")),
             ),
         )
             .expectNextMatches { participation ->
                 participation.id == ParticipationId.of(1L) &&
                     participation.eventId == EventId.of(1L) &&
-                    participation.userId == UserId.of(1L) &&
+                    participation.userId == UserId.of(java.util.UUID.fromString("00000000-0000-0000-0000-000000000001")) &&
                     participation.status == ParticipationStatus.ONLINE
             }
             .verifyComplete()
@@ -75,7 +75,7 @@ class ParticipationCommandServiceTest {
             service.createParticipation(
                 eventId = 1L,
                 command = CreateParticipationCommand(
-                    userId = 1L,
+                    userId = java.util.UUID.fromString("00000000-0000-0000-0000-000000000001"),
                     status = ParticipationStatus.ONSITE,
                 ),
             ),
@@ -92,7 +92,7 @@ class ParticipationCommandServiceTest {
             userRepository = FakeUserRepository(userExists = true),
         )
 
-        StepVerifier.create(service.createParticipation(999L, CreateParticipationCommand(userId = 1L)))
+        StepVerifier.create(service.createParticipation(999L, CreateParticipationCommand(userId = java.util.UUID.fromString("00000000-0000-0000-0000-000000000001"))))
             .expectError(EventNotFoundException::class.java)
             .verify()
     }
@@ -105,7 +105,7 @@ class ParticipationCommandServiceTest {
             userRepository = FakeUserRepository(userExists = false),
         )
 
-        StepVerifier.create(service.createParticipation(1L, CreateParticipationCommand(userId = 999L)))
+        StepVerifier.create(service.createParticipation(1L, CreateParticipationCommand(userId = java.util.UUID.fromString("00000000-0000-0000-0000-000000000999"))))
             .expectError(UserNotFoundException::class.java)
             .verify()
     }
@@ -118,7 +118,7 @@ class ParticipationCommandServiceTest {
             userRepository = FakeUserRepository(userExists = true),
         )
 
-        StepVerifier.create(service.createParticipation(1L, CreateParticipationCommand(userId = 1L)))
+        StepVerifier.create(service.createParticipation(1L, CreateParticipationCommand(userId = java.util.UUID.fromString("00000000-0000-0000-0000-000000000001"))))
             .expectError(ParticipationAlreadyExistsException::class.java)
             .verify()
     }
@@ -132,26 +132,13 @@ class ParticipationCommandServiceTest {
         )
 
         assertThrows<InvalidRequestException> {
-            service.createParticipation(0L, CreateParticipationCommand(userId = 1L))
-        }
-    }
-
-    @Test
-    fun `createParticipation rejects non positive userId`() {
-        val service = ParticipationCommandService(
-            participationRepository = FakeParticipationRepository(),
-            eventRepository = FakeEventRepository(eventExists = true),
-            userRepository = FakeUserRepository(userExists = true),
-        )
-
-        assertThrows<InvalidRequestException> {
-            service.createParticipation(1L, CreateParticipationCommand(userId = 0L))
+            service.createParticipation(0L, CreateParticipationCommand(userId = java.util.UUID.fromString("00000000-0000-0000-0000-000000000001")))
         }
     }
 
     private fun existingParticipation(): Participation = Participation(
         id = ParticipationId.of(1L),
-        userId = UserId.of(1L),
+        userId = UserId.of(java.util.UUID.fromString("00000000-0000-0000-0000-000000000001")),
         eventId = EventId.of(1L),
         status = ParticipationStatus.ONLINE,
         joinedAt = Instant.parse("2026-05-12T00:00:00Z"),
@@ -219,10 +206,10 @@ class ParticipationCommandServiceTest {
         private val userExists: Boolean,
     ) : UserRepository {
         override fun findById(id: UserId): Mono<User> =
-            if (userExists && id == UserId.of(1L)) {
+            if (userExists && id == UserId.of(java.util.UUID.fromString("00000000-0000-0000-0000-000000000001"))) {
                 Mono.just(
                     User(
-                        id = UserId.of(1L),
+                        id = UserId.of(java.util.UUID.fromString("00000000-0000-0000-0000-000000000001")),
                         nickname = UserNickname.of("ahnnayeong"),
                     ),
                 )
@@ -230,8 +217,8 @@ class ParticipationCommandServiceTest {
                 Mono.empty()
             }
 
-        override fun existsById(id: UserId): Mono<Boolean> = Mono.just(userExists && id == UserId.of(1L))
+        override fun existsById(id: UserId): Mono<Boolean> = Mono.just(userExists && id == UserId.of(java.util.UUID.fromString("00000000-0000-0000-0000-000000000001")))
 
-        override fun save(user: NewUser): Mono<User> = Mono.just(user.persist(UserId.of(1L)))
+        override fun save(user: NewUser): Mono<User> = Mono.just(user.persist(UserId.of(java.util.UUID.fromString("00000000-0000-0000-0000-000000000001"))))
     }
 }

@@ -319,7 +319,10 @@ class EventCommandServiceTest {
                 command = CreateChatRoomCommand(type = ChatRoomType.GLOBAL),
             ),
         )
-            .expectError(InvalidRequestException::class.java)
+            .expectErrorMatches { ex ->
+                ex is InvalidRequestException &&
+                    ex.message == "chat room type GLOBAL already exists for this event."
+            }
             .verify()
     }
 
@@ -365,7 +368,10 @@ class EventCommandServiceTest {
                 command = CreateChatRoomCommand(type = ChatRoomType.LOCAL),
             ),
         )
-            .expectError(InvalidRequestException::class.java)
+            .expectErrorMatches { ex ->
+                ex is InvalidRequestException &&
+                    ex.message == "chat room type LOCAL is not allowed for visibility ONLINE."
+            }
             .verify()
     }
 

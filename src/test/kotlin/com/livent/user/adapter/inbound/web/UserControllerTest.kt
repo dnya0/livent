@@ -46,18 +46,18 @@ class UserControllerTest {
             .exchange()
             .expectStatus().isOk
             .expectBody()
-            .jsonPath("$.data.id").isEqualTo(1)
+            .jsonPath("$.data.id").isEqualTo("00000000-0000-0000-0000-000000000001")
             .jsonPath("$.data.nickname").isEqualTo("ahnnayeong")
     }
 
     @Test
     fun `get users returns user`() {
         webTestClient.get()
-            .uri("/users/1")
+            .uri("/users/00000000-0000-0000-0000-000000000001")
             .exchange()
             .expectStatus().isOk
             .expectBody()
-            .jsonPath("$.data.id").isEqualTo(1)
+            .jsonPath("$.data.id").isEqualTo("00000000-0000-0000-0000-000000000001")
             .jsonPath("$.data.nickname").isEqualTo("ahnnayeong")
     }
 
@@ -79,7 +79,7 @@ class UserControllerTest {
 
     private class FakeUserRepository : UserRepository {
         private var user: User = User(
-            id = UserId.of(1L),
+            id = UserId.of(java.util.UUID.fromString("00000000-0000-0000-0000-000000000001")),
             nickname = UserNickname.of("ahnnayeong"),
         )
 
@@ -89,7 +89,7 @@ class UserControllerTest {
         override fun existsById(id: UserId): Mono<Boolean> = Mono.just(user.id == id)
 
         override fun save(user: NewUser): Mono<User> {
-            this.user = user.persist(UserId.of(1L))
+            this.user = user.persist(UserId.of(java.util.UUID.fromString("00000000-0000-0000-0000-000000000001")))
             return Mono.just(this.user)
         }
     }

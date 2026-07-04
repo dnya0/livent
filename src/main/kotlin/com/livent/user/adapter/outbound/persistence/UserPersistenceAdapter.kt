@@ -24,11 +24,12 @@ class UserPersistenceAdapter(
 }
 
 private fun UserEntity.toDomain(): User = User(
-    id = UserId.of(requireNotNull(id) { "User id must not be null when reading (nickname='$nickname')." }),
+    id = UserId.of(id),
     nickname = UserNickname.of(nickname),
 )
 
-private fun NewUser.toEntity(id: Long? = null): UserEntity = UserEntity(
-    id = id,
+private fun NewUser.toEntity(id: UserId = UserId.new()): UserEntity = UserEntity(
+    id = id.value,
     nickname = nickname.value,
+    newEntity = true,
 )

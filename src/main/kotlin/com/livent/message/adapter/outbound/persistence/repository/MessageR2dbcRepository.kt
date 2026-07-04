@@ -12,7 +12,20 @@ interface MessageR2dbcRepository : ReactiveCrudRepository<MessageEntity, Long> {
         FROM messages
         WHERE chat_room_id = :chatRoomId
         ORDER BY id ASC
+        LIMIT :limit
         """,
     )
-    fun findByChatRoomIdOrderByIdAsc(chatRoomId: Long): Flux<MessageEntity>
+    fun findFirstPageByChatRoomId(chatRoomId: Long, limit: Int): Flux<MessageEntity>
+
+    @Query(
+        """
+        SELECT id, chat_room_id, sender_id, content, type, created_at
+        FROM messages
+        WHERE chat_room_id = :chatRoomId
+          AND id > :cursor
+        ORDER BY id ASC
+        LIMIT :limit
+        """,
+    )
+    fun findAfterIdByChatRoomId(chatRoomId: Long, cursor: Long, limit: Int): Flux<MessageEntity>
 }

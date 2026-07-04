@@ -5,10 +5,14 @@ class InvalidRequestException(
     cause: Throwable? = null,
 ) : IllegalArgumentException(message, cause)
 
-inline fun <T> invalidRequestCatch(message: String, block: () -> T): T = try {
+inline fun <T> invalidRequestCatch(
+    message: String,
+    useCauseMessage: Boolean = false,
+    block: () -> T,
+): T = try {
     block()
 } catch (ex: InvalidRequestException) {
     throw ex
 } catch (ex: IllegalArgumentException) {
-    throw InvalidRequestException(message, ex)
+    throw InvalidRequestException(if (useCauseMessage) ex.message ?: message else message, ex)
 }

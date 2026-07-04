@@ -1,6 +1,6 @@
 package com.livent.user.application
 
-import com.livent.common.adapter.inbound.web.exception.invalidRequestCatch
+import java.util.UUID
 import com.livent.user.domain.exception.UserNotFoundException
 import com.livent.user.domain.model.User
 import com.livent.user.domain.repository.UserRepository
@@ -12,12 +12,6 @@ import reactor.core.publisher.Mono
 class UserQueryService(
     private val userRepository: UserRepository,
 ) {
-    fun getUser(userId: Long): Mono<User> = userRepository.findById(resolveUserId(userId))
+    fun getUser(userId: UUID): Mono<User> = userRepository.findById(UserId.of(userId))
         .switchIfEmpty(Mono.error(UserNotFoundException()))
-
-    private fun resolveUserId(userId: Long): UserId = invalidRequestCatch(
-        message = "userId must be a positive number.",
-    ) {
-        UserId.of(userId)
-    }
 }

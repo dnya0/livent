@@ -1,5 +1,6 @@
 package com.livent.participation.application
 
+import java.util.UUID
 import com.livent.common.adapter.inbound.web.exception.invalidRequestCatch
 import com.livent.event.domain.value.EventId
 import com.livent.participation.domain.exception.ParticipationNotFoundException
@@ -13,10 +14,10 @@ import reactor.core.publisher.Mono
 class ParticipationQueryService(
     private val participationRepository: ParticipationRepository,
 ) {
-    fun getParticipation(eventId: Long, userId: Long): Mono<Participation> =
+    fun getParticipation(eventId: Long, userId: UUID): Mono<Participation> =
         participationRepository.findByEventIdAndUserId(
             eventId = resolveEventId(eventId),
-            userId = resolveUserId(userId),
+            userId = UserId.of(userId),
         )
             .switchIfEmpty(Mono.error(ParticipationNotFoundException()))
 
@@ -24,11 +25,5 @@ class ParticipationQueryService(
         message = "eventId must be a positive number.",
     ) {
         EventId.of(eventId)
-    }
-
-    private fun resolveUserId(userId: Long): UserId = invalidRequestCatch(
-        message = "userId must be a positive number.",
-    ) {
-        UserId.of(userId)
     }
 }

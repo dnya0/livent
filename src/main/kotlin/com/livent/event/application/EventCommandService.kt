@@ -112,6 +112,7 @@ class EventCommandService(
     ) {
         invalidRequestCatch(
             message = "invalid chat room policy.",
+            useCauseMessage = true,
         ) {
             EventChatRoomPolicy.validateCreatable(
                 event = event,

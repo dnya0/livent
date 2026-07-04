@@ -1,6 +1,7 @@
 package com.livent.participation.application
 
 import java.time.Instant
+import java.util.UUID
 import com.livent.common.adapter.inbound.web.exception.InvalidRequestException
 import com.livent.event.domain.value.EventId
 import com.livent.participation.domain.exception.ParticipationNotFoundException
@@ -16,13 +17,15 @@ import reactor.core.publisher.Mono
 import reactor.test.StepVerifier
 
 class ParticipationQueryServiceTest {
+    private val userId = UUID.fromString("00000000-0000-0000-0000-000000000001")
+
     @Test
     fun `getParticipation returns participation when found`() {
         val service = ParticipationQueryService(
             FakeParticipationRepository(
                 participation = Participation(
                     id = ParticipationId.of(1L),
-                    userId = UserId.of(1L),
+                    userId = UserId.of(userId),
                     eventId = EventId.of(1L),
                     status = ParticipationStatus.ONLINE,
                     joinedAt = Instant.parse("2026-05-12T00:00:00Z"),
@@ -30,10 +33,10 @@ class ParticipationQueryServiceTest {
             ),
         )
 
-        StepVerifier.create(service.getParticipation(1L, 1L))
+        StepVerifier.create(service.getParticipation(1L, userId))
             .expectNextMatches {
                 it.id == ParticipationId.of(1L) &&
-                    it.userId == UserId.of(1L) &&
+                    it.userId == UserId.of(userId) &&
                     it.eventId == EventId.of(1L)
             }
             .verifyComplete()
@@ -43,7 +46,7 @@ class ParticipationQueryServiceTest {
     fun `getParticipation throws ParticipationNotFoundException when missing`() {
         val service = ParticipationQueryService(FakeParticipationRepository(participation = null))
 
-        StepVerifier.create(service.getParticipation(1L, 1L))
+        StepVerifier.create(service.getParticipation(1L, userId))
             .expectError(ParticipationNotFoundException::class.java)
             .verify()
     }
@@ -53,16 +56,7 @@ class ParticipationQueryServiceTest {
         val service = ParticipationQueryService(FakeParticipationRepository(participation = null))
 
         assertThrows<InvalidRequestException> {
-            service.getParticipation(0L, 1L)
-        }
-    }
-
-    @Test
-    fun `getParticipation rejects non positive userId`() {
-        val service = ParticipationQueryService(FakeParticipationRepository(participation = null))
-
-        assertThrows<InvalidRequestException> {
-            service.getParticipation(1L, 0L)
+            service.getParticipation(0L, userId)
         }
     }
 

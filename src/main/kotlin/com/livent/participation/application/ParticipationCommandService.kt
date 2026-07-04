@@ -23,7 +23,7 @@ class ParticipationCommandService(
 ) {
     fun createParticipation(eventId: Long, command: CreateParticipationCommand): Mono<Participation> {
         val resolvedEventId = resolveEventId(eventId)
-        val resolvedUserId = resolveUserId(command.userId)
+        val resolvedUserId = UserId.of(command.userId)
 
         return eventRepository.existsById(resolvedEventId)
             .flatMap { exists ->
@@ -54,11 +54,5 @@ class ParticipationCommandService(
         message = "eventId must be a positive number.",
     ) {
         EventId.of(eventId)
-    }
-
-    private fun resolveUserId(userId: Long): UserId = invalidRequestCatch(
-        message = "userId must be a positive number.",
-    ) {
-        UserId.of(userId)
     }
 }
