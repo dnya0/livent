@@ -1,8 +1,9 @@
 package com.livent.participation.application
 
+import java.util.UUID
 import com.livent.participation.domain.type.ParticipationStatus
 
 data class CreateParticipationCommand(
-    val userId: Long,
+    val userId: UUID,
     val status: ParticipationStatus? = null,
 )

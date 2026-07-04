@@ -238,6 +238,9 @@ class EventControllerTest {
 
         override fun existsById(id: EventId): Mono<Boolean> = Mono.just(event?.id == id)
 
+        override fun findChatRoomById(id: ChatRoomId): Mono<ChatRoom> =
+            chatRooms.firstOrNull { it.id == id }?.let { Mono.just(it) } ?: Mono.empty()
+
         override fun findChatRoomsByEventId(eventId: EventId): Flux<ChatRoom> =
             if (event?.id != eventId) Flux.empty()
             else Flux.fromIterable(chatRooms.filter { it.eventId == eventId })

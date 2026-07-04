@@ -1,6 +1,6 @@
 package com.livent.event.application
 
-import com.livent.common.adapter.inbound.web.exception.InvalidRequestException
+import com.livent.common.adapter.inbound.web.exception.invalidRequestCatch
 import com.livent.event.domain.exception.EventNotFoundException
 import com.livent.event.domain.model.Event
 import com.livent.event.domain.model.EventChatRoomPolicy
@@ -93,16 +93,16 @@ class EventCommandService(
                 )
             }
 
-    private fun parseTimezone(timezone: String): EventTimezone = try {
+    private fun parseTimezone(timezone: String): EventTimezone = invalidRequestCatch(
+        message = "timezone must be a valid IANA timezone.",
+    ) {
         EventTimezone.of(timezone)
-    } catch (ex: IllegalArgumentException) {
-        throw InvalidRequestException("timezone must be a valid IANA timezone.", ex)
     }
 
-    private fun resolveEventId(eventId: Long): EventId = try {
+    private fun resolveEventId(eventId: Long): EventId = invalidRequestCatch(
+        message = "eventId must be a positive number.",
+    ) {
         EventId.of(eventId)
-    } catch (ex: IllegalArgumentException) {
-        throw InvalidRequestException("eventId must be a positive number.", ex)
     }
 
     private fun validateChatRoomPolicy(
@@ -110,14 +110,15 @@ class EventCommandService(
         type: ChatRoomType,
         existingTypes: Set<ChatRoomType>,
     ) {
-        try {
+        invalidRequestCatch(
+            message = "invalid chat room policy.",
+            useCauseMessage = true,
+        ) {
             EventChatRoomPolicy.validateCreatable(
                 event = event,
                 type = type,
                 existingTypes = existingTypes,
             )
-        } catch (ex: IllegalArgumentException) {
-            throw InvalidRequestException(ex.message ?: "invalid chat room policy.", ex)
         }
     }
 }

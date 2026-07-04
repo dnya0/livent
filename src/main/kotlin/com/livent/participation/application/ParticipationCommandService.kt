@@ -1,6 +1,6 @@
 package com.livent.participation.application
 
-import com.livent.common.adapter.inbound.web.exception.InvalidRequestException
+import com.livent.common.adapter.inbound.web.exception.invalidRequestCatch
 import com.livent.event.domain.exception.EventNotFoundException
 import com.livent.event.domain.repository.EventRepository
 import com.livent.event.domain.value.EventId
@@ -23,7 +23,7 @@ class ParticipationCommandService(
 ) {
     fun createParticipation(eventId: Long, command: CreateParticipationCommand): Mono<Participation> {
         val resolvedEventId = resolveEventId(eventId)
-        val resolvedUserId = resolveUserId(command.userId)
+        val resolvedUserId = UserId.of(command.userId)
 
         return eventRepository.existsById(resolvedEventId)
             .flatMap { exists ->
@@ -50,15 +50,9 @@ class ParticipationCommandService(
             }
     }
 
-    private fun resolveEventId(eventId: Long): EventId = try {
+    private fun resolveEventId(eventId: Long): EventId = invalidRequestCatch(
+        message = "eventId must be a positive number.",
+    ) {
         EventId.of(eventId)
-    } catch (ex: IllegalArgumentException) {
-        throw InvalidRequestException("eventId must be a positive number.", ex)
-    }
-
-    private fun resolveUserId(userId: Long): UserId = try {
-        UserId.of(userId)
-    } catch (ex: IllegalArgumentException) {
-        throw InvalidRequestException("userId must be a positive number.", ex)
     }
 }

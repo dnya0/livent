@@ -31,7 +31,7 @@ class ParticipationPersistenceAdapterTest {
         StepVerifier.create(
             adapter.save(
                 NewParticipation.create(
-                    userId = UserId.of(1L),
+                    userId = UserId.of(java.util.UUID.fromString("00000000-0000-0000-0000-000000000001")),
                     eventId = EventId.of(1L),
                     status = ParticipationStatus.ONLINE,
                 ),
@@ -51,7 +51,7 @@ class ParticipationPersistenceAdapterTest {
         StepVerifier.create(
             adapter.save(
                 NewParticipation.create(
-                    userId = UserId.of(1L),
+                    userId = UserId.of(java.util.UUID.fromString("00000000-0000-0000-0000-000000000001")),
                     eventId = EventId.of(1L),
                 ),
             ),

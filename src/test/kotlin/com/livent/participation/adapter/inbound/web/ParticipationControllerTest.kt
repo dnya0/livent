@@ -63,7 +63,7 @@ class ParticipationControllerTest {
             .bodyValue(
                 """
                 {
-                  "userId": 2,
+                  "userId": "00000000-0000-0000-0000-000000000002",
                   "status": "ONSITE"
                 }
                 """.trimIndent(),
@@ -72,7 +72,7 @@ class ParticipationControllerTest {
             .expectStatus().isOk
             .expectBody()
             .jsonPath("$.data.id").isEqualTo(1)
-            .jsonPath("$.data.userId").isEqualTo(2)
+            .jsonPath("$.data.userId").isEqualTo("00000000-0000-0000-0000-000000000002")
             .jsonPath("$.data.eventId").isEqualTo(1)
             .jsonPath("$.data.status").isEqualTo("ONSITE")
     }
@@ -80,12 +80,12 @@ class ParticipationControllerTest {
     @Test
     fun `get participation returns participation`() {
         webTestClient.get()
-            .uri("/events/1/participations/1")
+            .uri("/events/1/participations/00000000-0000-0000-0000-000000000001")
             .exchange()
             .expectStatus().isOk
             .expectBody()
             .jsonPath("$.data.id").isEqualTo(1)
-            .jsonPath("$.data.userId").isEqualTo(1)
+            .jsonPath("$.data.userId").isEqualTo("00000000-0000-0000-0000-000000000001")
             .jsonPath("$.data.eventId").isEqualTo(1)
             .jsonPath("$.data.status").isEqualTo("ONLINE")
     }
@@ -109,7 +109,7 @@ class ParticipationControllerTest {
     private class FakeParticipationRepository : ParticipationRepository {
         private var participation: Participation = Participation(
             id = ParticipationId.of(1L),
-            userId = UserId.of(1L),
+            userId = UserId.of(java.util.UUID.fromString("00000000-0000-0000-0000-000000000001")),
             eventId = EventId.of(1L),
             status = ParticipationStatus.ONLINE,
             joinedAt = Instant.parse("2026-05-12T00:00:00Z"),
@@ -139,6 +139,8 @@ class ParticipationControllerTest {
 
         override fun existsById(id: EventId): Mono<Boolean> = Mono.just(id == EventId.of(1L))
 
+        override fun findChatRoomById(id: ChatRoomId): Mono<ChatRoom> = Mono.empty()
+
         override fun findChatRoomsByEventId(eventId: EventId): Flux<ChatRoom> = Flux.empty()
 
         override fun saveChatRoom(chatRoom: NewChatRoom): Mono<ChatRoom> = Mono.just(
@@ -163,13 +165,13 @@ class ParticipationControllerTest {
     private class FakeUserRepository : UserRepository {
         override fun findById(id: UserId): Mono<User> = Mono.just(
             User(
-                id = UserId.of(1L),
+                id = UserId.of(java.util.UUID.fromString("00000000-0000-0000-0000-000000000001")),
                 nickname = UserNickname.of("ahnnayeong"),
             ),
         )
 
-        override fun existsById(id: UserId): Mono<Boolean> = Mono.just(id == UserId.of(1L) || id == UserId.of(2L))
+        override fun existsById(id: UserId): Mono<Boolean> = Mono.just(id == UserId.of(java.util.UUID.fromString("00000000-0000-0000-0000-000000000001")) || id == UserId.of(java.util.UUID.fromString("00000000-0000-0000-0000-000000000002")))
 
-        override fun save(user: NewUser): Mono<User> = Mono.just(user.persist(UserId.of(1L)))
+        override fun save(user: NewUser): Mono<User> = Mono.just(user.persist(UserId.of(java.util.UUID.fromString("00000000-0000-0000-0000-000000000001"))))
     }
 }

@@ -319,7 +319,10 @@ class EventCommandServiceTest {
                 command = CreateChatRoomCommand(type = ChatRoomType.GLOBAL),
             ),
         )
-            .expectError(InvalidRequestException::class.java)
+            .expectErrorMatches { ex ->
+                ex is InvalidRequestException &&
+                    ex.message == "chat room type GLOBAL already exists for this event."
+            }
             .verify()
     }
 
@@ -365,7 +368,10 @@ class EventCommandServiceTest {
                 command = CreateChatRoomCommand(type = ChatRoomType.LOCAL),
             ),
         )
-            .expectError(InvalidRequestException::class.java)
+            .expectErrorMatches { ex ->
+                ex is InvalidRequestException &&
+                    ex.message == "chat room type LOCAL is not allowed for visibility ONLINE."
+            }
             .verify()
     }
 
@@ -406,6 +412,9 @@ class EventCommandServiceTest {
         override fun deleteById(id: EventId): Mono<Long> = Mono.just(1L)
 
         override fun existsById(id: EventId): Mono<Boolean> = Mono.just(existingEvent.id == id)
+
+        override fun findChatRoomById(id: ChatRoomId): Mono<ChatRoom> =
+            chatRooms.firstOrNull { it.id == id }?.let { Mono.just(it) } ?: Mono.empty()
 
         override fun findChatRoomsByEventId(eventId: EventId): Flux<ChatRoom> =
             Flux.fromIterable(chatRooms.filter { it.eventId == eventId })

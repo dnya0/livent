@@ -4,6 +4,7 @@ import com.livent.event.domain.model.ChatRoom
 import com.livent.event.domain.model.Event
 import com.livent.event.domain.model.NewChatRoom
 import com.livent.event.domain.model.NewEvent
+import com.livent.event.domain.value.ChatRoomId
 import com.livent.event.domain.value.EventId
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -22,6 +23,8 @@ interface EventRepository {
     fun deleteById(id: EventId): Mono<Long>
 
     fun existsById(id: EventId): Mono<Boolean>
+
+    fun findChatRoomById(id: ChatRoomId): Mono<ChatRoom>
 
     fun findChatRoomsByEventId(eventId: EventId): Flux<ChatRoom>
 

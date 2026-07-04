@@ -19,7 +19,7 @@ class UserCommandServiceTest {
 
         StepVerifier.create(service.createUser(CreateUserCommand(nickname = "  ahnnayeong  ")))
             .expectNextMatches { user ->
-                user.id == UserId.of(1L) &&
+                user.id == UserId.of(java.util.UUID.fromString("00000000-0000-0000-0000-000000000001")) &&
                     user.nickname == UserNickname.of("ahnnayeong")
             }
             .verifyComplete()
@@ -54,7 +54,7 @@ class UserCommandServiceTest {
 
         override fun save(user: NewUser): Mono<User> {
             savedNickname = user.nickname.value
-            return Mono.just(user.persist(UserId.of(1L)))
+            return Mono.just(user.persist(UserId.of(java.util.UUID.fromString("00000000-0000-0000-0000-000000000001"))))
         }
     }
 }
