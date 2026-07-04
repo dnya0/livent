@@ -1,6 +1,6 @@
 package com.livent.user.application
 
-import com.livent.common.adapter.inbound.web.exception.InvalidRequestException
+import com.livent.common.adapter.inbound.web.exception.invalidRequestCatch
 import com.livent.user.domain.exception.UserNotFoundException
 import com.livent.user.domain.model.User
 import com.livent.user.domain.repository.UserRepository
@@ -15,9 +15,9 @@ class UserQueryService(
     fun getUser(userId: Long): Mono<User> = userRepository.findById(resolveUserId(userId))
         .switchIfEmpty(Mono.error(UserNotFoundException()))
 
-    private fun resolveUserId(userId: Long): UserId = try {
+    private fun resolveUserId(userId: Long): UserId = invalidRequestCatch(
+        message = "userId must be a positive number.",
+    ) {
         UserId.of(userId)
-    } catch (ex: IllegalArgumentException) {
-        throw InvalidRequestException("userId must be a positive number.", ex)
     }
 }

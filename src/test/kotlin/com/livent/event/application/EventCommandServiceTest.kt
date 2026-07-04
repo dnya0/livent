@@ -407,6 +407,9 @@ class EventCommandServiceTest {
 
         override fun existsById(id: EventId): Mono<Boolean> = Mono.just(existingEvent.id == id)
 
+        override fun findChatRoomById(id: ChatRoomId): Mono<ChatRoom> =
+            chatRooms.firstOrNull { it.id == id }?.let { Mono.just(it) } ?: Mono.empty()
+
         override fun findChatRoomsByEventId(eventId: EventId): Flux<ChatRoom> =
             Flux.fromIterable(chatRooms.filter { it.eventId == eventId })
 

@@ -1,6 +1,6 @@
 package com.livent.participation.application
 
-import com.livent.common.adapter.inbound.web.exception.InvalidRequestException
+import com.livent.common.adapter.inbound.web.exception.invalidRequestCatch
 import com.livent.event.domain.value.EventId
 import com.livent.participation.domain.exception.ParticipationNotFoundException
 import com.livent.participation.domain.model.Participation
@@ -20,15 +20,15 @@ class ParticipationQueryService(
         )
             .switchIfEmpty(Mono.error(ParticipationNotFoundException()))
 
-    private fun resolveEventId(eventId: Long): EventId = try {
+    private fun resolveEventId(eventId: Long): EventId = invalidRequestCatch(
+        message = "eventId must be a positive number.",
+    ) {
         EventId.of(eventId)
-    } catch (ex: IllegalArgumentException) {
-        throw InvalidRequestException("eventId must be a positive number.", ex)
     }
 
-    private fun resolveUserId(userId: Long): UserId = try {
+    private fun resolveUserId(userId: Long): UserId = invalidRequestCatch(
+        message = "userId must be a positive number.",
+    ) {
         UserId.of(userId)
-    } catch (ex: IllegalArgumentException) {
-        throw InvalidRequestException("userId must be a positive number.", ex)
     }
 }

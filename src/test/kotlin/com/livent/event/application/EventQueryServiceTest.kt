@@ -7,6 +7,7 @@ import com.livent.event.domain.model.ChatRoom
 import com.livent.event.domain.model.Event
 import com.livent.event.domain.model.NewChatRoom
 import com.livent.event.domain.model.NewEvent
+import com.livent.event.domain.repository.EventRepository
 import com.livent.event.domain.type.ChatRoomType
 import com.livent.event.domain.type.EventVisibility
 import com.livent.event.domain.value.ChatRoomId
@@ -17,7 +18,6 @@ import com.livent.event.domain.value.EventLocation
 import com.livent.event.domain.value.EventSchedule
 import com.livent.event.domain.value.EventTimezone
 import com.livent.event.domain.value.EventTitle
-import com.livent.event.domain.repository.EventRepository
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import reactor.core.publisher.Flux
@@ -213,6 +213,8 @@ class EventQueryServiceTest {
 
         override fun existsById(id: EventId): Mono<Boolean> =
             Mono.just(events.any { it.id == id })
+
+        override fun findChatRoomById(id: ChatRoomId): Mono<ChatRoom> = Mono.empty()
 
         override fun findChatRoomsByEventId(eventId: EventId): Flux<ChatRoom> =
             if (events.none { it.id == eventId }) Flux.empty()

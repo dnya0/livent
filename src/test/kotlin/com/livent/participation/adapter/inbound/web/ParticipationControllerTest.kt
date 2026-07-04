@@ -139,6 +139,8 @@ class ParticipationControllerTest {
 
         override fun existsById(id: EventId): Mono<Boolean> = Mono.just(id == EventId.of(1L))
 
+        override fun findChatRoomById(id: ChatRoomId): Mono<ChatRoom> = Mono.empty()
+
         override fun findChatRoomsByEventId(eventId: EventId): Flux<ChatRoom> = Flux.empty()
 
         override fun saveChatRoom(chatRoom: NewChatRoom): Mono<ChatRoom> = Mono.just(

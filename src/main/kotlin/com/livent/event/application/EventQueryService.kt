@@ -1,6 +1,7 @@
 package com.livent.event.application
 
 import com.livent.common.adapter.inbound.web.exception.InvalidRequestException
+import com.livent.common.adapter.inbound.web.exception.invalidRequestCatch
 import com.livent.event.domain.exception.EventNotFoundException
 import com.livent.event.domain.model.ChatRoom
 import com.livent.event.domain.model.Event
@@ -93,10 +94,10 @@ class EventQueryService(
         return EventId.of(raw)
     }
 
-    private fun resolveEventId(eventId: Long): EventId = try {
+    private fun resolveEventId(eventId: Long): EventId = invalidRequestCatch(
+        message = "eventId must be a positive number.",
+    ) {
         EventId.of(eventId)
-    } catch (ex: IllegalArgumentException) {
-        throw InvalidRequestException("eventId must be a positive number.", ex)
     }
 }
 
